@@ -1,0 +1,42 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { ProcessedJob } from "@/types"
+import { parse, addDays, isValid } from "date-fns"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export const parsePrice = (priceStr: string | number | undefined): number => {
+  if (!priceStr) return 0;
+  if (typeof priceStr === 'number') return priceStr;
+  const match = priceStr.match(/[\d.]+/);
+  return match ? parseFloat(match[0]) : 0;
+};
+
+export const parseJobDate = (dateStr: string | Date): Date | undefined => {
+  if (dateStr instanceof Date) return dateStr;
+  if (!dateStr) return undefined;
+
+  // Try parsing common formats
+  const formats = ['dd/MM/yyyy', 'yyyy-MM-dd', 'd MMM yyyy', 'dd MMM yyyy'];
+  for (const fmt of formats) {
+    const parsed = parse(dateStr, fmt, new Date());
+    if (isValid(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+export const isAirportJob = (job: ProcessedJob): boolean => {
+  const airports = ['heathrow', 'gatwick', 'stansted', 'luton', 'city airport', 'lcy', 'lhr', 'lgw', 'stn', 'ltn'];
+  const text = `${job.pickup} ${job.dropoff}`.toLowerCase();
+  return airports.some(airport => text.includes(airport));
+};
+
+export const calculateDueDate = (bookingDate: Date, cycle: string | undefined): Date | null => {
+  if (!cycle) return null;
+  // Simple logic for now, can be expanded based on specific cycle strings
+  if (cycle.toLowerCase().includes('weekly')) return addDays(bookingDate, 7);
+  if (cycle.toLowerCase().includes('monthly')) return addDays(bookingDate, 30);
+  return addDays(bookingDate, 7); // Default
+};
