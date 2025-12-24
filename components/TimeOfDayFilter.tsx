@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuCheckboxItem,
+    DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -25,37 +25,17 @@ export function TimeOfDayFilter() {
     const searchParams = useSearchParams();
     const [open, setOpen] = React.useState(false);
 
-    // Parse selected times from URL
-    const selectedTimes = React.useMemo(() => {
-        const param = searchParams.get("timeOfDay");
-        if (!param) return [];
-        return param.split(',').filter((t): t is TimeOfDay =>
-            timeOfDayOptions.some(tod => tod.value === t)
-        );
-    }, [searchParams]);
+    // Get selected time from URL
+    const selectedTime = searchParams.get("timeOfDay") as TimeOfDay | null;
 
-    const handleToggle = (time: TimeOfDay) => {
+    const handleSelect = (time: TimeOfDay) => {
         const params = new URLSearchParams(searchParams.toString());
-
-        let newSelected: TimeOfDay[];
-        if (selectedTimes.includes(time)) {
-            // Remove time
-            newSelected = selectedTimes.filter(t => t !== time);
-        } else {
-            // Add time
-            newSelected = [...selectedTimes, time];
-        }
-
-        if (newSelected.length === 0) {
-            params.delete("timeOfDay");
-        } else {
-            params.set("timeOfDay", newSelected.join(','));
-        }
-
+        params.set("timeOfDay", time);
         router.push(`/my-jobs?${params.toString()}`);
+        setOpen(false);
     };
 
-    const clearAll = () => {
+    const clearFilter = () => {
         const params = new URLSearchParams(searchParams.toString());
         params.delete("timeOfDay");
         router.push(`/my-jobs?${params.toString()}`);
@@ -63,12 +43,9 @@ export function TimeOfDayFilter() {
     };
 
     const getButtonLabel = () => {
-        if (selectedTimes.length === 0) return "All Times";
-        if (selectedTimes.length === 1) {
-            const time = timeOfDayOptions.find(tod => tod.value === selectedTimes[0]);
-            return time?.label.split(' ')[0] || "Time of Day";
-        }
-        return `${selectedTimes.length} Times`;
+        if (!selectedTime) return "All Times";
+        const time = timeOfDayOptions.find(tod => tod.value === selectedTime);
+        return time?.label.split(' ')[0] || "Time of Day";
     };
 
     return (
@@ -78,7 +55,7 @@ export function TimeOfDayFilter() {
                     variant="outline"
                     className={cn(
                         "w-full sm:w-auto justify-between text-muted-foreground font-normal",
-                        selectedTimes.length > 0 && "text-foreground"
+                        selectedTime && "text-foreground"
                     )}
                 >
                     {getButtonLabel()}
@@ -89,26 +66,27 @@ export function TimeOfDayFilter() {
                 {timeOfDayOptions.map((time) => {
                     const Icon = time.icon;
                     return (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                             key={time.value}
-                            checked={selectedTimes.includes(time.value)}
-                            onCheckedChange={() => handleToggle(time.value)}
+                            onClick={() => handleSelect(time.value)}
+                            className={cn(
+                                selectedTime === time.value && "bg-accent"
+                            )}
                         >
                             <Icon className="mr-2 h-4 w-4" />
                             {time.label}
-                        </DropdownMenuCheckboxItem>
+                        </DropdownMenuItem>
                     );
                 })}
-                {selectedTimes.length > 0 && (
+                {selectedTime && (
                     <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem
-                            checked={false}
-                            onCheckedChange={clearAll}
+                        <DropdownMenuItem
+                            onClick={clearFilter}
                             className="text-muted-foreground"
                         >
-                            Clear All
-                        </DropdownMenuCheckboxItem>
+                            Clear Filter
+                        </DropdownMenuItem>
                     </>
                 )}
             </DropdownMenuContent>

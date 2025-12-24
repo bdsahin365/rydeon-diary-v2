@@ -60,7 +60,11 @@ export async function getJobs(filter?: string, dateFrom?: string, dateTo?: strin
 
         // Filter by time of day if provided
         if (timeOfDay && timeOfDay !== 'all') {
-            jobs = jobs.filter((job: any) => job.timeOfDay === timeOfDay);
+            jobs = jobs.filter((job: any) => {
+                if (!job.bookingTime) return false;
+                const calculatedCategory = categorizeTimeOfDay(job.bookingTime);
+                return calculatedCategory === timeOfDay;
+            });
         }
 
         return JSON.parse(JSON.stringify(jobs));
@@ -184,11 +188,6 @@ export async function updateJob(jobId: string, data: Partial<IJob>) {
         // Remove _id from data if present to avoid immutable field error
         const { _id, userId, ...updateData } = data as any;
 
-        // Recalculate timeOfDay if bookingTime is being updated
-        if (updateData.bookingTime) {
-            updateData.timeOfDay = categorizeTimeOfDay(updateData.bookingTime);
-        }
-
         await Job.findOneAndUpdate(
             { _id: jobId, userId: session.user.id },
             { $set: updateData },
@@ -209,7 +208,16 @@ export async function createJob(data: Partial<IJob>) {
     await dbConnect();
     try {
         // Generate unique job ID: RYDE<DDMMYYYY>-<Index>
-        const bookingDate = data.bookingDate || new Date().toLocaleDateString('en-GB');
+        // Generate unique job ID: RYDE<DDMMYYYY>-<Index>
+        let bookingDate = data.bookingDate || new Date().toLocaleDateString('en-GB');
+
+        // Ensure date is in DD/MM/YYYY format for ID generation
+        // Handle YYYY-MM-DD
+        if (bookingDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [y, m, d] = bookingDate.split('-');
+            bookingDate = `${d}/${m}/${y}`;
+        }
+
         const [day, month, year] = bookingDate.split('/');
         const dateStr = `${day}${month}${year}`;
 
@@ -230,9 +238,6 @@ export async function createJob(data: Partial<IJob>) {
 
         const jobRef = `RYDE${dateStr}-${index}`;
 
-        // Auto-categorize time of day
-        const timeOfDay = data.bookingTime ? categorizeTimeOfDay(data.bookingTime) : undefined;
-
         // Check for overlapping jobs
         const overlapCheck = await checkJobOverlap(
             data.bookingDate || '',
@@ -244,7 +249,6 @@ export async function createJob(data: Partial<IJob>) {
         const newJob = new Job({
             ...data,
             jobRef,
-            timeOfDay,
             userId: session.user.id
         });
 

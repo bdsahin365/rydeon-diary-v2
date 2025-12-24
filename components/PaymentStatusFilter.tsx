@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuCheckboxItem,
+    DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -27,37 +27,17 @@ export function PaymentStatusFilter() {
     const searchParams = useSearchParams();
     const [open, setOpen] = React.useState(false);
 
-    // Parse selected statuses from URL
-    const selectedStatuses = React.useMemo(() => {
-        const param = searchParams.get("paymentStatus");
-        if (!param) return [];
-        return param.split(',').filter((s): s is PaymentStatus =>
-            paymentStatuses.some(ps => ps.value === s)
-        );
-    }, [searchParams]);
+    // Get selected status from URL
+    const selectedStatus = searchParams.get("paymentStatus") as PaymentStatus | null;
 
-    const handleToggle = (status: PaymentStatus) => {
+    const handleSelect = (status: PaymentStatus) => {
         const params = new URLSearchParams(searchParams.toString());
-
-        let newSelected: PaymentStatus[];
-        if (selectedStatuses.includes(status)) {
-            // Remove status
-            newSelected = selectedStatuses.filter(s => s !== status);
-        } else {
-            // Add status
-            newSelected = [...selectedStatuses, status];
-        }
-
-        if (newSelected.length === 0) {
-            params.delete("paymentStatus");
-        } else {
-            params.set("paymentStatus", newSelected.join(','));
-        }
-
+        params.set("paymentStatus", status);
         router.push(`/my-jobs?${params.toString()}`);
+        setOpen(false);
     };
 
-    const clearAll = () => {
+    const clearFilter = () => {
         const params = new URLSearchParams(searchParams.toString());
         params.delete("paymentStatus");
         router.push(`/my-jobs?${params.toString()}`);
@@ -65,12 +45,9 @@ export function PaymentStatusFilter() {
     };
 
     const getButtonLabel = () => {
-        if (selectedStatuses.length === 0) return "All Payment Statuses";
-        if (selectedStatuses.length === 1) {
-            const status = paymentStatuses.find(ps => ps.value === selectedStatuses[0]);
-            return status?.label || "Payment Status";
-        }
-        return `${selectedStatuses.length} Statuses`;
+        if (!selectedStatus) return "All Payment Statuses";
+        const status = paymentStatuses.find(ps => ps.value === selectedStatus);
+        return status?.label || "Payment Status";
     };
 
     return (
@@ -80,7 +57,7 @@ export function PaymentStatusFilter() {
                     variant="outline"
                     className={cn(
                         "w-full sm:w-auto justify-between text-muted-foreground font-normal",
-                        selectedStatuses.length > 0 && "text-foreground"
+                        selectedStatus && "text-foreground"
                     )}
                 >
                     {getButtonLabel()}
@@ -89,24 +66,25 @@ export function PaymentStatusFilter() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
                 {paymentStatuses.map((status) => (
-                    <DropdownMenuCheckboxItem
+                    <DropdownMenuItem
                         key={status.value}
-                        checked={selectedStatuses.includes(status.value)}
-                        onCheckedChange={() => handleToggle(status.value)}
+                        onClick={() => handleSelect(status.value)}
+                        className={cn(
+                            selectedStatus === status.value && "bg-accent"
+                        )}
                     >
                         {status.label}
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                 ))}
-                {selectedStatuses.length > 0 && (
+                {selectedStatus && (
                     <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem
-                            checked={false}
-                            onCheckedChange={clearAll}
+                        <DropdownMenuItem
+                            onClick={clearFilter}
                             className="text-muted-foreground"
                         >
-                            Clear All
-                        </DropdownMenuCheckboxItem>
+                            Clear Filter
+                        </DropdownMenuItem>
                     </>
                 )}
             </DropdownMenuContent>

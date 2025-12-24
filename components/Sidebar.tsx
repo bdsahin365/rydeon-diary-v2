@@ -14,14 +14,14 @@ import {
     LifeBuoy,
     Settings,
     LogOut,
-    Plus
+
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: Search, label: "Find Jobs", href: "/find-jobs" },
-    { icon: Plus, label: "Add Job", href: "/add-job" },
+
     { icon: Briefcase, label: "My Jobs", href: "/my-jobs" },
     { icon: Calendar, label: "Calendar", href: "/calendar" },
     { icon: Wallet, label: "Earnings", href: "/earnings" },

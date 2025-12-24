@@ -219,37 +219,35 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
                                 Comprehensive information about this job
                             </SheetDescription>
                         </div>
-                        {(job as any).jobRef && (
-                            <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                                <span className="text-xs font-mono font-medium text-muted-foreground">
-                                    {(job as any).jobRef}
-                                </span>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5"
-                                    onClick={() => {
-                                        const ref = (job as any).jobRef;
-                                        if (ref) {
-                                            navigator.clipboard.writeText(ref.toString()).then(() => {
-                                                toast({
-                                                    title: "Job Reference Copied",
-                                                    description: "Job reference copied to clipboard",
-                                                });
-                                            }).catch(() => {
-                                                toast({
-                                                    variant: "destructive",
-                                                    title: "Copy Failed",
-                                                    description: "Failed to copy job reference",
-                                                });
+                        <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
+                            <span className="text-xs font-mono font-medium text-muted-foreground">
+                                {(job as any).jobRef || (job as any)._id || (job as any).id}
+                            </span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
+                                onClick={() => {
+                                    const ref = (job as any).jobRef || (job as any)._id || (job as any).id;
+                                    if (ref) {
+                                        navigator.clipboard.writeText(ref.toString()).then(() => {
+                                            toast({
+                                                title: "Job ID Copied",
+                                                description: "Job ID copied to clipboard",
                                             });
-                                        }
-                                    }}
-                                >
-                                    <Copy className="h-3 w-3" />
-                                </Button>
-                            </div>
-                        )}
+                                        }).catch(() => {
+                                            toast({
+                                                variant: "destructive",
+                                                title: "Copy Failed",
+                                                description: "Failed to copy job ID",
+                                            });
+                                        });
+                                    }
+                                }}
+                            >
+                                <Copy className="h-3 w-3" />
+                            </Button>
+                        </div>
                     </div>
                 </SheetHeader>
 
