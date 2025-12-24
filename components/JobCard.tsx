@@ -148,7 +148,20 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
     const handleSaveJob = async (updatedJob: Partial<ProcessedJob>) => {
         if (!job._id) return;
         try {
-            const result = await updateJob(job._id, updatedJob);
+            // Convert ProcessedJob to IJob format
+            const jobUpdate: any = { ...updatedJob };
+
+            // Ensure bookingDate is a string if it's a Date object
+            if (jobUpdate.bookingDate instanceof Date) {
+                // Convert Date to DD/MM/YYYY format
+                const date = jobUpdate.bookingDate;
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                jobUpdate.bookingDate = `${day}/${month}/${year}`;
+            }
+
+            const result = await updateJob(job._id, jobUpdate);
             if (result.success) {
                 toast({ title: "Job Updated", description: "Changes saved successfully." });
                 router.refresh();
