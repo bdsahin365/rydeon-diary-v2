@@ -20,7 +20,11 @@ const timeOfDayOptions: { value: TimeOfDay; label: string; icon: React.ElementTy
     { value: 'evening', label: 'Evening (6PM-12AM)', icon: Sunset },
 ];
 
-export function TimeOfDayFilter() {
+interface TimeOfDayFilterProps {
+    fullWidth?: boolean;
+}
+
+export function TimeOfDayFilter({ fullWidth }: TimeOfDayFilterProps = {}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [open, setOpen] = React.useState(false);
@@ -54,7 +58,8 @@ export function TimeOfDayFilter() {
                 <Button
                     variant="outline"
                     className={cn(
-                        "w-full justify-between text-muted-foreground font-normal px-3 h-9",
+                        "justify-between text-muted-foreground font-normal px-3 h-9",
+                        fullWidth ? "w-full" : "w-[120px]",
                         selectedTime && "text-foreground bg-accent/50 border-accent-foreground/50"
                     )}
                 >

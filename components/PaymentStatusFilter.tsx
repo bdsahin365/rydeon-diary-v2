@@ -22,7 +22,11 @@ const paymentStatuses: { value: PaymentStatus; label: string }[] = [
     { value: 'scheduled', label: 'Scheduled' },
 ];
 
-export function PaymentStatusFilter() {
+interface PaymentStatusFilterProps {
+    fullWidth?: boolean;
+}
+
+export function PaymentStatusFilter({ fullWidth }: PaymentStatusFilterProps = {}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [open, setOpen] = React.useState(false);
@@ -56,8 +60,9 @@ export function PaymentStatusFilter() {
                 <Button
                     variant="outline"
                     className={cn(
-                        "w-full justify-between text-muted-foreground font-normal px-3 h-9",
-                        selectedStatus && "text-foreground bg-accent/50 border-accent-foreground/50"
+                        "justify-between text-muted-foreground font-normal px-3 h-9",
+                        fullWidth ? "w-full" : "w-[140px]",
+                        selectedStatus && "text-foreground bg-accent/50 border-accent-foreground/50",
                     )}
                 >
                     <span className="truncate mr-2">
