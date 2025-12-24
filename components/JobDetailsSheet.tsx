@@ -6,7 +6,8 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle, Map, Clock, User, Car, Calendar, Phone, Plane, MessageSquare, BaggageClaim, Baby, CircleDot, Flag, Square, Users, Banknote, Copy } from 'lucide-react';
 import type { MyJob, ProcessedJob } from '@/types';
 import { ProfitCalculator } from './profit-calculator';
-import { format } from 'date-fns';
+import { RouteDisplay } from './RouteDisplay';
+import { format, parse, isValid } from 'date-fns';
 import { cn, formatCountdown, getVehicleLabel, getLocationString } from '@/lib/utils';
 import { useCountdown } from '@/hooks/use-countdown';
 import { MapView } from './map-view';
@@ -38,92 +39,6 @@ function InfoLine({ icon: Icon, label, value, className }: { icon: React.Element
     )
 }
 
-function RouteDisplay({ pickup, vias = [], dropoff }: { pickup: string | { formatted_address?: string; address?: string; geometry?: any } | null, vias?: string[], dropoff: string | { formatted_address?: string; address?: string; geometry?: any } | null }) {
-    const safeVias = Array.isArray(vias) ? vias : [];
-    const hasVias = safeVias && safeVias.length > 0;
-    const pickupString = getLocationString(pickup, 'N/A');
-    const dropoffString = getLocationString(dropoff, '');
-    const { toast } = useToast();
-
-    const copyToClipboard = (address: string, type: string) => {
-        navigator.clipboard.writeText(address).then(() => {
-            toast({
-                title: "Address Copied",
-                description: `${type} address copied to clipboard`,
-            });
-        }).catch(() => {
-            toast({
-                variant: "destructive",
-                title: "Copy Failed",
-                description: "Failed to copy address to clipboard",
-            });
-        });
-    };
-
-    return (
-        <div className="space-y-1">
-            <div className="flex items-start gap-3">
-                <div className="flex flex-col items-center">
-                    <CircleDot className="h-5 w-5 text-green-500" />
-                    {(hasVias || dropoffString) && <div className="w-px h-4 my-1 border-l-2 border-dashed border-border" />}
-                </div>
-                <div className="flex-1 flex items-center justify-between gap-2">
-                    <p className="font-semibold text-foreground pt-0.5 flex-1">{pickupString}</p>
-                    {pickupString !== 'N/A' && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 shrink-0"
-                            onClick={() => copyToClipboard(pickupString, 'Pickup')}
-                        >
-                            <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                    )}
-                </div>
-            </div>
-
-            {safeVias.map((via, index) => (
-                <div key={index} className="flex items-start gap-3">
-                    <div className="flex flex-col items-center">
-                        <Square className="h-5 w-5 text-yellow-500" />
-                        <div className="w-px h-4 my-1 border-l-2 border-dashed border-border" />
-                    </div>
-                    <div className="flex-1 flex items-center justify-between gap-2">
-                        <p className="font-semibold text-foreground pt-0.5 flex-1">{via}</p>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 shrink-0"
-                            onClick={() => copyToClipboard(via, `Via ${index + 1}`)}
-                        >
-                            <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                    </div>
-                </div>
-            ))}
-
-            {dropoffString && (
-                <div className="flex items-start gap-3">
-                    <div className="flex flex-col items-center">
-                        <Flag className="h-5 w-5 text-red-500" />
-                    </div>
-                    <div className="flex-1 flex items-center justify-between gap-2">
-                        <p className="font-semibold text-foreground pt-0.5 flex-1">{dropoffString}</p>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 shrink-0"
-                            onClick={() => copyToClipboard(dropoffString, 'Dropoff')}
-                        >
-                            <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
-}
-
 export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProps) {
     const [tripInfo, setTripInfo] = useState<{ distance: string; duration: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -134,8 +49,19 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
     const { pickup, dropoff, distance, duration, vias: rawVias } = job;
     const vias = Array.isArray(rawVias) ? rawVias : [];
     const myJobStatus = (job as MyJob).status;
-    const { days, hours, minutes } = useCountdown(job.parsedBookingDate);
-    const timeRemaining = formatCountdown({ days, hours, minutes });
+
+    const validBookingDate = useMemo(() => {
+        const { bookingDate, bookingTime } = job;
+        if (typeof bookingDate === 'string' && bookingTime) {
+            // Try parsing DD/MM/YYYY HH:mm
+            const parsed = parse(`${bookingDate} ${bookingTime}`, 'dd/MM/yyyy HH:mm', new Date());
+            if (isValid(parsed)) return parsed;
+        }
+        return job.parsedBookingDate;
+    }, [job.bookingDate, job.bookingTime, job.parsedBookingDate]);
+
+    const { days, hours, minutes, seconds } = useCountdown(validBookingDate);
+    const timeRemaining = formatCountdown({ days, hours, minutes, seconds });
 
     useEffect(() => {
         async function fetchTripInfo() {
@@ -212,41 +138,36 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent side={isDesktop ? "right" : "bottom"} className={cn("p-0 flex flex-col gap-0", isDesktop ? "sm:max-w-xl w-full" : "h-[90vh]")}>
                 <SheetHeader className="p-6 pb-2 border-b">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                            <SheetTitle>Job Details</SheetTitle>
-                            <SheetDescription>
-                                Comprehensive information about this job
-                            </SheetDescription>
-                        </div>
-                        <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                            <span className="text-xs font-mono font-medium text-muted-foreground">
+                    <div className="flex flex-col gap-1">
+                        <SheetTitle>Job Details</SheetTitle>
+                        <div className="flex items-center gap-1">
+                            <span className="text-xs font-mono font-medium text-muted-foreground bg-muted px-2 py-1 rounded-md flex items-center gap-2">
                                 {(job as any).jobRef || (job as any)._id || (job as any).id}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-4 w-4 hover:bg-transparent text-muted-foreground hover:text-foreground p-0"
+                                    onClick={() => {
+                                        const ref = (job as any).jobRef || (job as any)._id || (job as any).id;
+                                        if (ref) {
+                                            navigator.clipboard.writeText(ref.toString()).then(() => {
+                                                toast({
+                                                    title: "Job ID Copied",
+                                                    description: "Job ID copied to clipboard",
+                                                });
+                                            }).catch(() => {
+                                                toast({
+                                                    variant: "destructive",
+                                                    title: "Copy Failed",
+                                                    description: "Failed to copy job ID",
+                                                });
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <Copy className="h-3 w-3" />
+                                </Button>
                             </span>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5"
-                                onClick={() => {
-                                    const ref = (job as any).jobRef || (job as any)._id || (job as any).id;
-                                    if (ref) {
-                                        navigator.clipboard.writeText(ref.toString()).then(() => {
-                                            toast({
-                                                title: "Job ID Copied",
-                                                description: "Job ID copied to clipboard",
-                                            });
-                                        }).catch(() => {
-                                            toast({
-                                                variant: "destructive",
-                                                title: "Copy Failed",
-                                                description: "Failed to copy job ID",
-                                            });
-                                        });
-                                    }
-                                }}
-                            >
-                                <Copy className="h-3 w-3" />
-                            </Button>
                         </div>
                     </div>
                 </SheetHeader>
@@ -263,10 +184,15 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
 
                         <div className="px-6 py-4">
                             <TabsContent value="details" className="space-y-4 mt-0">
-                                {myJobStatus === 'scheduled' && timeRemaining ? (
-                                    <Card className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-center p-3">
-                                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-0">Time Until Pickup</p>
-                                        <p className="text-2xl font-bold text-blue-800 dark:text-blue-200 mt-0">{timeRemaining}</p>
+                                {(validBookingDate && (!myJobStatus || myJobStatus === 'scheduled') && timeRemaining) ? (
+                                    <Card className="flex flex-col gap-2 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-center p-2">
+                                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Time Until Pickup</p>
+                                        <p className="text-2xl font-bold text-blue-800 dark:text-blue-200 leading-tight">
+                                            {timeRemaining === '0s' ? 'Pickup time passed' : timeRemaining}
+                                        </p>
+                                        <p className="text-xs text-blue-600/80 dark:text-blue-300 font-medium">
+                                            {validBookingDate ? format(validBookingDate, "E, dd MMM yyyy 'at' h:mm a") : ''}
+                                        </p>
                                     </Card>
                                 ) : myJobStatus ? (
                                     <Card className={cn("text-center p-3", {
@@ -286,7 +212,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
 
                                 <div className="space-y-3">
                                     <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
-                                        <InfoLine icon={Calendar} label="Pickup Time" value={job.parsedBookingDate ? format(job.parsedBookingDate, "E, dd MMM yyyy 'at' h:mm a") : "N/A"} />
+                                        <InfoLine icon={Calendar} label="Pickup Time" value={validBookingDate ? format(validBookingDate, "E, dd MMM yyyy 'at' h:mm a") : "N/A"} />
                                         <Card className="mt-2">
                                             <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-3">
                                                 <Avatar>

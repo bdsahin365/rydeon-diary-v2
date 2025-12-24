@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import { differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
 
 export function useCountdown(targetDate?: Date) {
-    const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0 });
+    const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
     useEffect(() => {
         if (!targetDate) {
-            setCountdown({ days: 0, hours: 0, minutes: 0 });
+            setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
             return;
         }
 
@@ -15,19 +15,20 @@ export function useCountdown(targetDate?: Date) {
             const target = new Date(targetDate);
 
             if (target <= now) {
-                setCountdown({ days: 0, hours: 0, minutes: 0 });
+                setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
                 return;
             }
 
             const days = differenceInDays(target, now);
             const hours = differenceInHours(target, now) % 24;
             const minutes = differenceInMinutes(target, now) % 60;
+            const seconds = differenceInSeconds(target, now) % 60;
 
-            setCountdown({ days, hours, minutes });
+            setCountdown({ days, hours, minutes, seconds });
         };
 
         calculateCountdown();
-        const interval = setInterval(calculateCountdown, 60000); // Update every minute
+        const interval = setInterval(calculateCountdown, 1000); // Update every second
 
         return () => clearInterval(interval);
     }, [targetDate]);

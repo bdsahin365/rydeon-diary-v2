@@ -54,17 +54,17 @@ export const getVehicleLabel = (job: ProcessedJob | any): string => {
   return job.vehicle || 'N/A';
 };
 
-export const formatCountdown = ({ days, hours, minutes }: { days: number; hours: number; minutes: number }): string | null => {
-  if (days < 0 || hours < 0 || minutes < 0) return null;
+export const formatCountdown = ({ days, hours, minutes, seconds }: { days: number; hours: number; minutes: number; seconds: number }): string | null => {
+  if (days < 0 || hours < 0 || minutes < 0 || seconds < 0) return null;
 
   if (days > 0) {
     return `${days}d ${hours}h ${minutes}m`;
   }
   if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+    return `${hours}h ${minutes}m ${seconds}s`;
   }
   if (minutes > 0) {
-    return `${minutes}m`;
+    return `${minutes}m ${seconds}s`;
   }
-  return 'Now';
+  return `${seconds}s`;
 };
