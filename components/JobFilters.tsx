@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export function JobFilters() {
     const router = useRouter();
@@ -27,42 +28,24 @@ export function JobFilters() {
     ];
 
     return (
-        <div className="flex gap-1 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-            <Button
-                variant="ghost"
-                onClick={() => handleFilterChange("all")}
-                className={`rounded-none border-b-2 px-4 font-medium hover:bg-transparent ${currentFilter === 'all' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-            >
-                All Jobs
-            </Button>
-            <Button
-                variant="ghost"
-                onClick={() => handleFilterChange("scheduled")}
-                className={`rounded-none border-b-2 px-4 font-medium hover:bg-transparent ${currentFilter === 'scheduled' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-            >
-                Upcoming
-            </Button>
-            <Button
-                variant="ghost"
-                onClick={() => handleFilterChange("completed")}
-                className={`rounded-none border-b-2 px-4 font-medium hover:bg-transparent ${currentFilter === 'completed' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-            >
-                Completed
-            </Button>
-            <Button
-                variant="ghost"
-                onClick={() => handleFilterChange("cancelled")}
-                className={`rounded-none border-b-2 px-4 font-medium hover:bg-transparent ${currentFilter === 'cancelled' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-            >
-                Cancelled
-            </Button>
-            <Button
-                variant="ghost"
-                onClick={() => handleFilterChange("archived")}
-                className={`rounded-none border-b-2 px-4 font-medium hover:bg-transparent ${currentFilter === 'archived' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-            >
-                Archive
-            </Button>
+        <div className="w-full sm:w-auto overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 scrollbar-hide">
+            <div className="flex gap-2 sm:gap-1 min-w-max">
+                {tabs.map((tab) => (
+                    <Button
+                        key={tab.value}
+                        variant="ghost"
+                        onClick={() => handleFilterChange(tab.value)}
+                        className={cn(
+                            "rounded-full px-4 font-medium transition-all text-sm h-9 border",
+                            currentFilter === tab.value
+                                ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground shadow-sm"
+                                : "bg-background text-muted-foreground border-transparent hover:bg-muted hover:text-foreground"
+                        )}
+                    >
+                        {tab.name}
+                    </Button>
+                ))}
+            </div>
         </div>
     );
 }

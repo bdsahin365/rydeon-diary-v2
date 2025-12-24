@@ -60,7 +60,11 @@ const presets: PresetOption[] = [
     },
 ];
 
-export function DateRangeFilter() {
+interface DateRangeFilterProps {
+    mobileMode?: boolean;
+}
+
+export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [open, setOpen] = React.useState(false);
@@ -153,6 +157,7 @@ export function DateRangeFilter() {
                     variant="outline"
                     className={cn(
                         "justify-between text-muted-foreground font-normal",
+                        mobileMode ? "w-full" : "w-[240px]",
                         dateRange && "text-foreground"
                     )}
                 >

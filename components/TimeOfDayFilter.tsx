@@ -54,12 +54,21 @@ export function TimeOfDayFilter() {
                 <Button
                     variant="outline"
                     className={cn(
-                        "w-full sm:w-auto justify-between text-muted-foreground font-normal",
-                        selectedTime && "text-foreground"
+                        "w-full justify-between text-muted-foreground font-normal px-3 h-9",
+                        selectedTime && "text-foreground bg-accent/50 border-accent-foreground/50"
                     )}
                 >
-                    {getButtonLabel()}
-                    <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                    <span className="truncate mr-2 flex items-center gap-2">
+                        {selectedTime ? (
+                            <>
+                                {React.createElement(timeOfDayOptions.find(t => t.value === selectedTime)?.icon || Sun, { className: "h-3.5 w-3.5" })}
+                                {timeOfDayOptions.find(t => t.value === selectedTime)?.label.split(' ')[0]}
+                            </>
+                        ) : (
+                            "Time"
+                        )}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

@@ -40,12 +40,19 @@ export default async function MyJobsPage({
             </div>
 
             {/* Tabs and Filters */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-1">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/50 pb-4">
                 <JobFilters />
 
-                <div className="flex gap-2 w-full sm:w-auto">
-                    <PaymentStatusFilter />
-                    <TimeOfDayFilter />
+                <div className="flex flex-row items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+                    {/* Filters Row - Scrollable on very small screens, single line */}
+                    <div className="flex flex-1 gap-2 min-w-0 sm:justify-end">
+                        <div className="flex-1 sm:flex-none min-w-[140px] max-w-[200px] sm:w-[160px]">
+                            <PaymentStatusFilter />
+                        </div>
+                        <div className="flex-1 sm:flex-none min-w-[130px] max-w-[200px] sm:w-[160px]">
+                            <TimeOfDayFilter />
+                        </div>
+                    </div>
                 </div>
             </div>
 
