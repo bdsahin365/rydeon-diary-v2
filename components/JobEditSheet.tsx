@@ -37,7 +37,6 @@ type JobEditSheetProps = {
 };
 
 const EMPTY_JOB: Partial<ProcessedJob> = {
-    jobRef: '',
     operator: '',
     pickup: '',
     dropoff: '',
@@ -47,7 +46,6 @@ const EMPTY_JOB: Partial<ProcessedJob> = {
     notes: '',
     bookingDate: format(new Date(), 'dd/MM/yyyy'),
     bookingTime: format(new Date(), 'HH:mm'),
-    isAvailable: true,
     customerName: '',
     customerPhone: '',
     flightNumber: '',
@@ -125,12 +123,11 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                     ...job,
                     bookingTime: job.bookingTime || '',
                     bookingDate: job.bookingDate || format(new Date(), 'dd/MM/yyyy'),
-                    isAvailable: job.isAvailable ?? true,
                     operatorFee: (job as MyJob).operatorFee ?? operatorFee,
                     fare: job.parsedPrice || (job.price ? parseFloat(job.price.toString().replace(/[£,]/g, '')) : 0),
                     vias: Array.isArray(job.vias) ? job.vias : [],
-                    pickup: typeof job.pickup === 'string' ? job.pickup : (job.pickup?.formatted_address || job.pickup?.address || ''),
-                    dropoff: typeof job.dropoff === 'string' ? job.dropoff : (job.dropoff?.formatted_address || job.dropoff?.address || '')
+                    pickup: typeof job.pickup === 'string' ? job.pickup : ((job.pickup as any)?.formatted_address || (job.pickup as any)?.address || ''),
+                    dropoff: typeof job.dropoff === 'string' ? job.dropoff : ((job.dropoff as any)?.formatted_address || (job.dropoff as any)?.address || '')
                 }
                 : { ...EMPTY_JOB, operatorFee };
 

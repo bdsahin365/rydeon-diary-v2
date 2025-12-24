@@ -21,21 +21,6 @@ export interface PaymentHistoryEntry {
     notes?: string;
 }
 
-export interface MyJob {
-    _id?: string;
-    id?: string;
-    pickup?: string;
-    dropoff?: string;
-    vias?: string[];
-    fare?: number;
-    price?: string | number; // Legacy or string input
-    parsedPrice?: number;
-    operator?: string;
-    operatorFee?: number;
-    airportFee?: number;
-    includeAirportFee?: boolean;
-    customerName?: string;
-    customerPhone?: string;
 export type JobStatus = 'scheduled' | 'completed' | 'cancelled' | 'archived';
 export type PaymentStatus = 'unpaid' | 'paid' | 'payment-scheduled' | 'overdue' | 'cancelled';
 
