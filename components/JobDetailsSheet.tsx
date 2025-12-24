@@ -306,7 +306,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
                                 <div>
                                     <h4 className="font-semibold text-foreground mb-3">Trip Route</h4>
                                     <div className="space-y-3 mb-4">
-                                        <RouteDisplay pickup={pickup} vias={vias} dropoff={dropoff} />
+                                        <RouteDisplay pickup={pickup ?? null} vias={vias} dropoff={dropoff ?? null} />
                                     </div>
 
                                     {isLoading ? (
