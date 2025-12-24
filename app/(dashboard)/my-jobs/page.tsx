@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import {
     Download,
-    Calendar as CalendarIcon,
-    ChevronDown,
 } from "lucide-react";
 import { JobCard, Job } from "@/components/JobCard";
 import { getJobs } from "@/app/actions/jobActions";
 import { JobFilters } from "@/components/JobFilters";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { PaymentStatusFilter } from "@/components/PaymentStatusFilter";
+import { TimeOfDayFilter } from "@/components/TimeOfDayFilter";
 
 export default async function MyJobsPage({
     searchParams,
@@ -15,7 +16,11 @@ export default async function MyJobsPage({
 }) {
     const resolvedSearchParams = await searchParams;
     const filter = typeof resolvedSearchParams.filter === 'string' ? resolvedSearchParams.filter : undefined;
-    const jobs = await getJobs(filter);
+    const dateFrom = typeof resolvedSearchParams.dateFrom === 'string' ? resolvedSearchParams.dateFrom : undefined;
+    const dateTo = typeof resolvedSearchParams.dateTo === 'string' ? resolvedSearchParams.dateTo : undefined;
+    const paymentStatus = typeof resolvedSearchParams.paymentStatus === 'string' ? resolvedSearchParams.paymentStatus : undefined;
+    const timeOfDay = typeof resolvedSearchParams.timeOfDay === 'string' ? resolvedSearchParams.timeOfDay : undefined;
+    const jobs = await getJobs(filter, dateFrom, dateTo, paymentStatus, timeOfDay);
 
     return (
         <div className="space-y-6">
@@ -30,10 +35,7 @@ export default async function MyJobsPage({
                         <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
-                    <Button variant="outline" className="text-muted-foreground bg-card hover:bg-muted">
-                        This Month
-                        <CalendarIcon className="ml-2 h-4 w-4" />
-                    </Button>
+                    <DateRangeFilter />
                 </div>
             </div>
 
@@ -41,11 +43,9 @@ export default async function MyJobsPage({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-1">
                 <JobFilters />
 
-                <div className="w-full sm:w-auto">
-                    <Button variant="outline" className="w-full sm:w-auto justify-between text-muted-foreground font-normal">
-                        All Payment Statuses
-                        <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                    </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <PaymentStatusFilter />
+                    <TimeOfDayFilter />
                 </div>
             </div>
 

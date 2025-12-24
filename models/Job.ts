@@ -25,6 +25,7 @@ export interface IJob extends Document {
     name?: string;
     date?: string;
     userId: string;
+    timeOfDay?: 'midnight' | 'day' | 'evening';
 }
 
 const JobSchema: Schema = new Schema({
@@ -43,7 +44,7 @@ const JobSchema: Schema = new Schema({
     operator: { type: String },
     customerName: { type: String },
     customerPhone: { type: String },
-    paymentStatus: { type: String },
+    paymentStatus: { type: String, index: true },
     paymentDueDate: { type: String },
     flightNumber: { type: String },
     status: { type: String, default: 'scheduled' },
@@ -52,6 +53,7 @@ const JobSchema: Schema = new Schema({
     name: { type: String }, // Legacy
     date: { type: String }, // Legacy
     userId: { type: String, required: true, index: true },
+    timeOfDay: { type: String, enum: ['midnight', 'day', 'evening'], index: true },
 }, {
     timestamps: true,
     collection: 'my_jobs',

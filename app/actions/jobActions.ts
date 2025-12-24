@@ -4,8 +4,10 @@ import dbConnect from "@/lib/mongodb";
 import Job, { IJob } from "@/models/Job";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { parse, isWithinInterval, isValid } from "date-fns";
+import { categorizeTimeOfDay } from "@/lib/time-utils";
 
-export async function getJobs(filter?: string) {
+export async function getJobs(filter?: string, dateFrom?: string, dateTo?: string) {
     const session = await auth();
     if (!session?.user?.id) {
         return [];
@@ -18,13 +20,37 @@ export async function getJobs(filter?: string) {
             query.status = filter;
         }
 
-        // For scheduled/upcoming jobs, sort by booking date and time (ascending - next job first)
-        // For other statuses, sort by creation date (descending - newest first)
+        // Fetch all matching jobs first
         let jobs;
         if (filter === 'scheduled') {
             jobs = await Job.find(query).sort({ bookingDate: 1, bookingTime: 1 });
         } else {
             jobs = await Job.find(query).sort({ createdAt: -1 });
+        }
+
+        // Filter by date range if provided
+        if (dateFrom && dateTo) {
+            jobs = jobs.filter((job: any) => {
+                if (!job.bookingDate) return false;
+
+                try {
+                    // Parse the booking date (DD/MM/YYYY format)
+                    const bookingDate = parse(job.bookingDate, 'dd/MM/yyyy', new Date());
+                    if (!isValid(bookingDate)) return false;
+
+                    // Parse date range parameters
+                    const fromDate = parse(dateFrom, 'dd/MM/yyyy', new Date());
+                    const toDate = parse(dateTo, 'dd/MM/yyyy', new Date());
+
+                    if (!isValid(fromDate) || !isValid(toDate)) return false;
+
+                    // Check if booking date is within range (inclusive)
+                    return isWithinInterval(bookingDate, { start: fromDate, end: toDate });
+                } catch (e) {
+                    console.error("Error parsing date:", e);
+                    return false;
+                }
+            });
         }
 
         return JSON.parse(JSON.stringify(jobs));
@@ -148,6 +174,11 @@ export async function updateJob(jobId: string, data: Partial<IJob>) {
         // Remove _id from data if present to avoid immutable field error
         const { _id, userId, ...updateData } = data as any;
 
+        // Recalculate timeOfDay if bookingTime is being updated
+        if (updateData.bookingTime) {
+            updateData.timeOfDay = categorizeTimeOfDay(updateData.bookingTime);
+        }
+
         await Job.findOneAndUpdate(
             { _id: jobId, userId: session.user.id },
             { $set: updateData },
@@ -181,11 +212,16 @@ export async function createJob(data: Partial<IJob>) {
         let index = 1;
         if (jobsForDate.length > 0) {
             const lastJobRef = jobsForDate[0].jobRef;
-            const lastIndex = parseInt(lastJobRef.split('-')[1] || '0');
-            index = lastIndex + 1;
+            if (lastJobRef) {
+                const lastIndex = parseInt(lastJobRef.split('-')[1] || '0');
+                index = lastIndex + 1;
+            }
         }
 
         const jobRef = `RYDE${dateStr}-${index}`;
+
+        // Auto-categorize time of day
+        const timeOfDay = data.bookingTime ? categorizeTimeOfDay(data.bookingTime) : undefined;
 
         // Check for overlapping jobs
         const overlapCheck = await checkJobOverlap(
@@ -198,6 +234,7 @@ export async function createJob(data: Partial<IJob>) {
         const newJob = new Job({
             ...data,
             jobRef,
+            timeOfDay,
             userId: session.user.id
         });
 

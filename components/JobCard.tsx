@@ -26,8 +26,9 @@ import { deleteJob, archiveJob, updateJob } from "@/app/actions/jobActions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { JobEditSheet } from "@/components/JobEditSheet";
+import { JobDetailsSheet } from "@/components/JobDetailsSheet";
 import { PaymentStatusDialog } from "@/components/PaymentStatusDialog";
-import { ProcessedJob, PaymentStatus } from "@/types";
+import { ProcessedJob, PaymentStatus, MyJob } from "@/types";
 import { useState } from "react";
 import {
     AlertDialog,
@@ -94,6 +95,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
     const isPickupAirport = job.pickup?.toLowerCase().includes('airport') || false;
     const isDropoffAirport = job.dropoff?.toLowerCase().includes('airport') || false;
 
@@ -284,7 +286,10 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
 
     return (
         <>
-            <Card className="bg-card text-card-foreground rounded-xl border py-3 group border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer">
+            <Card
+                className="bg-card text-card-foreground rounded-xl border py-3 group border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer"
+                onClick={() => setDetailsSheetOpen(true)}
+            >
                 <CardContent className="px-5 py-0">
                     {/* Card Header */}
                     <div className="flex justify-between items-start mb-2">
@@ -315,68 +320,70 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                                 <div className="text-lg font-bold text-green-500">£{profitValue.toFixed(2)}</div>
                                 <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">profit</div>
                             </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground hover:text-foreground"
-                                        aria-label="More options"
-                                    >
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <JobEditSheet job={job as any} onSave={handleSaveJob}>
-                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            <span>Edit</span>
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground hover:text-foreground"
+                                            aria-label="More options"
+                                        >
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                        <JobEditSheet job={job as any} onSave={handleSaveJob}>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                <span>Edit</span>
+                                            </DropdownMenuItem>
+                                        </JobEditSheet>
+
+                                        <PaymentStatusDialog job={job as any} onSave={handlePaymentStatusSave}>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                <CreditCard className="mr-2 h-4 w-4" />
+                                                <span>Change Payment Status</span>
+                                            </DropdownMenuItem>
+                                        </PaymentStatusDialog>
+
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusChange('completed');
+                                        }}>
+                                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                            <span>Mark as Completed</span>
                                         </DropdownMenuItem>
-                                    </JobEditSheet>
 
-                                    <PaymentStatusDialog job={job as any} onSave={handlePaymentStatusSave}>
-                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                            <CreditCard className="mr-2 h-4 w-4" />
-                                            <span>Change Payment Status</span>
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusChange('cancelled');
+                                        }}>
+                                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                            <span>Mark as Cancelled</span>
                                         </DropdownMenuItem>
-                                    </PaymentStatusDialog>
 
-                                    <DropdownMenuSeparator />
+                                        <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleStatusChange('completed');
-                                    }}>
-                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                        <span>Mark as Completed</span>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleStatusChange('cancelled');
-                                    }}>
-                                        <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                                        <span>Mark as Cancelled</span>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSeparator />
-
-                                    <DropdownMenuItem onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleArchive();
-                                    }}>
-                                        <Archive className="mr-2 h-4 w-4" />
-                                        <span>Archive</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDeleteDialogOpen(true);
-                                    }} className="text-red-600 focus:text-red-600">
-                                        <Trash className="mr-2 h-4 w-4" />
-                                        <span>Delete</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleArchive();
+                                        }}>
+                                            <Archive className="mr-2 h-4 w-4" />
+                                            <span>Archive</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteDialogOpen(true);
+                                        }} className="text-red-600 focus:text-red-600">
+                                            <Trash className="mr-2 h-4 w-4" />
+                                            <span>Delete</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
                     </div>
 
@@ -461,6 +468,13 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Job Details Sheet */}
+            <JobDetailsSheet
+                job={job as ProcessedJob | MyJob}
+                open={detailsSheetOpen}
+                onOpenChange={setDetailsSheetOpen}
+            />
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

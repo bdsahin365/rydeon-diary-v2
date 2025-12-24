@@ -40,3 +40,31 @@ export const calculateDueDate = (bookingDate: Date, cycle: string | undefined): 
   if (cycle.toLowerCase().includes('monthly')) return addDays(bookingDate, 30);
   return addDays(bookingDate, 7); // Default
 };
+
+export const getLocationString = (
+  location: string | { formatted_address?: string; address?: string } | null | undefined,
+  fallback: string = ''
+): string => {
+  if (!location) return fallback;
+  if (typeof location === 'string') return location;
+  return location.formatted_address || location.address || fallback;
+};
+
+export const getVehicleLabel = (job: ProcessedJob | any): string => {
+  return job.vehicle || 'N/A';
+};
+
+export const formatCountdown = ({ days, hours, minutes }: { days: number; hours: number; minutes: number }): string | null => {
+  if (days < 0 || hours < 0 || minutes < 0) return null;
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m`;
+  }
+  return 'Now';
+};

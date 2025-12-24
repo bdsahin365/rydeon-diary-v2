@@ -18,6 +18,14 @@ export function JobFilters() {
         router.push(`/my-jobs?${params.toString()}`);
     };
 
+    const tabs = [
+        { name: 'All Jobs', value: 'all', count: 0 },
+        { name: 'Upcoming', value: 'scheduled', count: 0 },
+        { name: 'Completed', value: 'completed', count: 0 },
+        { name: 'Cancelled', value: 'cancelled', count: 0 },
+        { name: 'Archive', value: 'archived', count: 0 },
+    ];
+
     return (
         <div className="flex gap-1 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
             <Button
@@ -50,9 +58,10 @@ export function JobFilters() {
             </Button>
             <Button
                 variant="ghost"
-                className="rounded-none border-b-2 border-transparent text-muted-foreground font-medium px-4 hover:bg-transparent hover:text-foreground"
+                onClick={() => handleFilterChange("archived")}
+                className={`rounded-none border-b-2 px-4 font-medium hover:bg-transparent ${currentFilter === 'archived' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
             >
-                Advanced
+                Archive
             </Button>
         </div>
     );
