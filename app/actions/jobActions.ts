@@ -7,7 +7,7 @@ import { auth } from "@/auth";
 import { parse, isWithinInterval, isValid } from "date-fns";
 import { categorizeTimeOfDay } from "@/lib/time-utils";
 
-export async function getJobs(filter?: string, dateFrom?: string, dateTo?: string) {
+export async function getJobs(filter?: string, dateFrom?: string, dateTo?: string, paymentStatus?: string, timeOfDay?: string) {
     const session = await auth();
     if (!session?.user?.id) {
         return [];
@@ -51,6 +51,16 @@ export async function getJobs(filter?: string, dateFrom?: string, dateTo?: strin
                     return false;
                 }
             });
+        }
+
+        // Filter by payment status if provided
+        if (paymentStatus && paymentStatus !== 'all') {
+            jobs = jobs.filter((job: any) => job.paymentStatus === paymentStatus);
+        }
+
+        // Filter by time of day if provided
+        if (timeOfDay && timeOfDay !== 'all') {
+            jobs = jobs.filter((job: any) => job.timeOfDay === timeOfDay);
         }
 
         return JSON.parse(JSON.stringify(jobs));
