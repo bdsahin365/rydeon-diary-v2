@@ -225,6 +225,8 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
     }
 
     if (isMobile) {
+        const inputRef = useRef<HTMLInputElement>(null);
+
         return (
             <Drawer open={open} onOpenChange={setOpen}>
                 <DrawerTrigger asChild>
@@ -248,6 +250,7 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
+                                ref={inputRef}
                                 value={inputValue}
                                 onChange={handleInputChange}
                                 placeholder={placeholder || "Search for a location..."}
@@ -260,7 +263,17 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                                 </Button>
                             )}
                         </div>
-                        <div className="overflow-y-auto max-h-[60vh]">
+                        <div
+                            className="overflow-y-auto max-h-[60vh]"
+                            onMouseDown={(e) => {
+                                // Prevent input from losing focus when clicking suggestions
+                                e.preventDefault();
+                            }}
+                            onTouchStart={(e) => {
+                                // Prevent input from losing focus on touch devices
+                                e.preventDefault();
+                            }}
+                        >
                             <SuggestionsList isMobileDrawer={true} />
                         </div>
                     </div>
