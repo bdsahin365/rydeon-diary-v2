@@ -253,7 +253,7 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                                 value={inputValue}
                                 onChange={handleInputChange}
                                 placeholder={placeholder || "Search for a location..."}
-                                className="pl-10 h-12 text-base"
+                                className="pl-10 h-12 text-base truncate"
                                 autoFocus
                             />
                             {inputValue && (
@@ -290,7 +290,7 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                         value={inputValue}
                         onChange={handleInputChange}
                         placeholder={placeholder || "Search for a location..."}
-                        className="pl-10 pr-10"
+                        className="pl-10 pr-10 truncate"
                         disabled={!isLoaded}
                         onClick={() => setOpen(true)}
                     />
