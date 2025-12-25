@@ -5,7 +5,7 @@ import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-12-18.acacia', // Using latest as of current knowledge, adjust if needed
+    apiVersion: '2025-12-15.clover', // Using latest as of current knowledge, adjust if needed
 });
 
 export async function POST(req: Request) {

@@ -5,7 +5,7 @@ import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-12-18.acacia' as any, // Cast to any to avoid version mismatch errors until package update
+    apiVersion: '2025-12-15.clover' as any, // Cast to any to avoid version mismatch errors until package update
 });
 
 export async function POST(req: Request) {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
             stripeCustomerId: subscription.customer as string,
             stripePriceId: subscription.items.data[0].price.id,
             stripeCurrentPeriodEnd: new Date(
-                subscription.current_period_end * 1000
+                (subscription as any).current_period_end * 1000
             ),
             plan: plan,
         });
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
             {
                 stripePriceId: subscription.items.data[0].price.id,
                 stripeCurrentPeriodEnd: new Date(
-                    subscription.current_period_end * 1000
+                    (subscription as any).current_period_end * 1000
                 ),
             }
         );
