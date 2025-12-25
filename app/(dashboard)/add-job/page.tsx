@@ -360,7 +360,7 @@ export default function AddJobPage() {
                     />
 
                     <div className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-4">
+                        <div className="space-y-4 min-w-0 overflow-hidden">
                             <div className="space-y-2">
                                 <Label className="text-base">Provider & Vehicle</Label>
                                 <OperatorCombobox
