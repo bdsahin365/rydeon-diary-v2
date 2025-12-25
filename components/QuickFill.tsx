@@ -65,7 +65,7 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                             value={pastedMessage}
                             onChange={(e) => setPastedMessage(e.target.value)}
                             rows={8}
-                            className="resize-none text-base"
+                            className="resize-none text-base min-h-[120px] max-h-[300px] overflow-y-auto"
                             autoFocus
                             suppressHydrationWarning
                         />
