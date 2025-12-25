@@ -38,7 +38,7 @@ export function Header() {
             </div>
 
             <div className="flex items-center space-x-2 lg:space-x-4">
-                {!pathname.startsWith("/") || pathname === "/dashboard" ? (
+                {pathname !== "/" ? (
                     <>
                         <Button asChild className="hidden sm:flex">
                             <Link href="/add-job">
@@ -60,7 +60,7 @@ export function Header() {
 
                 <ModeToggle />
 
-                {(!pathname.startsWith("/") || pathname === "/dashboard") ? (
+                {pathname !== "/" ? (
                     <Button variant="ghost" size="icon" className="relative">
                         <Bell className="h-5 w-5 text-muted-foreground" />
                         <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
