@@ -284,16 +284,19 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <div className="relative w-full" ref={triggerRef}>
-                    <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        value={inputValue}
-                        onChange={handleInputChange}
-                        placeholder={placeholder || "Search for a location..."}
-                        className="pl-10 pr-10 truncate overflow-hidden text-ellipsis"
-                        disabled={!isLoaded}
-                        onClick={() => setOpen(true)}
-                    />
+                <div className="relative w-full max-w-full" ref={triggerRef}>
+                    <Icon className="absolute left-3 top-1/2 z-10 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <div className="relative w-full overflow-hidden">
+                        <Input
+                            value={inputValue}
+                            onChange={handleInputChange}
+                            placeholder={placeholder || "Search for a location..."}
+                            className="pl-10 pr-10 w-full"
+                            disabled={!isLoaded}
+                            onClick={() => setOpen(true)}
+                            style={{ textOverflow: 'ellipsis' }}
+                        />
+                    </div>
                     {inputValue && (
                         <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={(e) => {
                             e.stopPropagation();
