@@ -59,12 +59,12 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                             <Sparkles className="w-4 h-4 text-primary" /> Auto-Fill Job Details
                         </DrawerTitle>
                     </DrawerHeader>
-                    <div className="p-4 pt-0 space-y-3 max-h-[calc(85vh-80px)] flex flex-col">
+                    <div className="p-4 pt-0 space-y-3 flex flex-col h-[calc(85vh-80px)]">
                         <Textarea
                             placeholder="Paste job details here (e.g. from WhatsApp/Email)..."
                             value={pastedMessage}
                             onChange={(e) => setPastedMessage(e.target.value)}
-                            className="resize-none text-base min-h-[120px] max-h-[40vh] overflow-y-auto"
+                            className="resize-none text-base min-h-[150px] flex-1 overflow-y-auto"
                             autoFocus
                             suppressHydrationWarning
                         />
