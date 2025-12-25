@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import mongoose from "mongoose";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-12-15.clover' as any,
+    apiVersion: '2024-12-18.acacia' as any,
 });
 
 export async function POST(req: Request) {
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
             console.log("[STRIPE_WEBHOOK] Session ID:", session.id);
 
             if (!session?.subscription) {
-                console.log("[STRIPE_WEBHOOK] No subscription in session");
+                console.log("[STRIPE_WEBHOOK] No subscription in session - likely one-time payment");
                 return new NextResponse(null, { status: 200 });
             }
 
@@ -52,15 +53,34 @@ export async function POST(req: Request) {
 
             console.log("[STRIPE_WEBHOOK] User ID from metadata:", session.metadata.userId);
 
-            await dbConnect();
-            console.log("[STRIPE_WEBHOOK] Database connected");
+            // Connect to database
+            try {
+                await dbConnect();
+                console.log("[STRIPE_WEBHOOK] Database connected successfully");
+            } catch (dbError: any) {
+                console.error("[STRIPE_WEBHOOK] Database connection failed:", dbError);
+                return new NextResponse("Database connection failed", { status: 500 });
+            }
 
             const plan = session.metadata.planName === 'Business' ? 'business' : 'pro';
             console.log("[STRIPE_WEBHOOK] Plan determined:", plan);
 
-            const updateResult = await User.findByIdAndUpdate(
-                session.metadata.userId,
-                {
+            // Verify user exists first
+            try {
+                const existingUser = await User.findById(session.metadata.userId);
+                if (!existingUser) {
+                    console.error("[STRIPE_WEBHOOK] User not found with ID:", session.metadata.userId);
+                    return new NextResponse("User not found", { status: 404 });
+                }
+                console.log("[STRIPE_WEBHOOK] Found existing user:", existingUser.email);
+            } catch (findError: any) {
+                console.error("[STRIPE_WEBHOOK] Error finding user:", findError);
+                return new NextResponse("Error finding user", { status: 500 });
+            }
+
+            // Update user with subscription data
+            try {
+                const updateData = {
                     stripeSubscriptionId: subscription.id,
                     stripeCustomerId: subscription.customer as string,
                     stripePriceId: subscription.items.data[0].price.id,
@@ -69,17 +89,29 @@ export async function POST(req: Request) {
                     ),
                     plan: plan,
                     subscriptionStatus: 'active',
-                },
-                { new: true } // Return updated document
-            );
+                };
 
-            if (!updateResult) {
-                console.error("[STRIPE_WEBHOOK] User not found with ID:", session.metadata.userId);
-                return new NextResponse("User not found", { status: 404 });
+                console.log("[STRIPE_WEBHOOK] Updating user with data:", JSON.stringify(updateData, null, 2));
+
+                const updateResult = await User.findByIdAndUpdate(
+                    session.metadata.userId,
+                    { $set: updateData },
+                    { new: true, runValidators: true }
+                );
+
+                if (!updateResult) {
+                    console.error("[STRIPE_WEBHOOK] Update returned null for user ID:", session.metadata.userId);
+                    return new NextResponse("Update failed", { status: 500 });
+                }
+
+                console.log("[STRIPE_WEBHOOK] ✅ User plan updated successfully!");
+                console.log("[STRIPE_WEBHOOK] Updated user email:", updateResult.email);
+                console.log("[STRIPE_WEBHOOK] New plan:", updateResult.plan);
+                console.log("[STRIPE_WEBHOOK] Subscription ID:", updateResult.stripeSubscriptionId);
+            } catch (updateError: any) {
+                console.error("[STRIPE_WEBHOOK] Error updating user:", updateError);
+                return new NextResponse("Error updating user: " + updateError.message, { status: 500 });
             }
-
-            console.log("[STRIPE_WEBHOOK] User plan updated successfully to:", plan);
-            console.log("[STRIPE_WEBHOOK] Updated user:", updateResult._id);
         }
 
         if (event.type === "invoice.payment_succeeded") {
@@ -99,11 +131,13 @@ export async function POST(req: Request) {
             await User.findOneAndUpdate(
                 { stripeSubscriptionId: subscription.id },
                 {
-                    stripePriceId: subscription.items.data[0].price.id,
-                    stripeCurrentPeriodEnd: new Date(
-                        (subscription as any).current_period_end * 1000
-                    ),
-                    subscriptionStatus: 'active',
+                    $set: {
+                        stripePriceId: subscription.items.data[0].price.id,
+                        stripeCurrentPeriodEnd: new Date(
+                            (subscription as any).current_period_end * 1000
+                        ),
+                        subscriptionStatus: 'active',
+                    }
                 }
             );
 
@@ -118,8 +152,10 @@ export async function POST(req: Request) {
             await User.findOneAndUpdate(
                 { stripeSubscriptionId: subscription.id },
                 {
-                    plan: 'free',
-                    subscriptionStatus: 'cancelled',
+                    $set: {
+                        plan: 'free',
+                        subscriptionStatus: 'cancelled',
+                    }
                 }
             );
 
@@ -128,7 +164,8 @@ export async function POST(req: Request) {
 
         return new NextResponse(null, { status: 200 });
     } catch (error: any) {
-        console.error("[STRIPE_WEBHOOK] Error processing event:", error);
+        console.error("[STRIPE_WEBHOOK] Unhandled error processing event:", error);
+        console.error("[STRIPE_WEBHOOK] Error stack:", error.stack);
         return new NextResponse(`Webhook handler error: ${error.message}`, { status: 500 });
     }
 }
