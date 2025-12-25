@@ -8,7 +8,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
-export default function RydeonPro() {
+import { Suspense } from "react";
+
+function RydeonProContent() {
     const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
     const { toast } = useToast();
     const router = useRouter();
@@ -132,5 +134,13 @@ export default function RydeonPro() {
                 <button className="text-primary hover:underline font-medium">Contact Sales</button>
             </div>
         </div>
+    );
+}
+
+export default function RydeonPro() {
+    return (
+        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <RydeonProContent />
+        </Suspense>
     );
 }
