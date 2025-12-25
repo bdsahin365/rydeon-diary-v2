@@ -31,6 +31,9 @@ export async function POST(req: Request) {
         if (event.type === "checkout.session.completed") {
             const session = event.data.object as Stripe.Checkout.Session;
 
+            console.log("[STRIPE_WEBHOOK] Processing checkout.session.completed");
+            console.log("[STRIPE_WEBHOOK] Session ID:", session.id);
+
             if (!session?.subscription) {
                 console.log("[STRIPE_WEBHOOK] No subscription in session");
                 return new NextResponse(null, { status: 200 });
@@ -40,27 +43,43 @@ export async function POST(req: Request) {
                 session.subscription as string
             ) as Stripe.Subscription;
 
+            console.log("[STRIPE_WEBHOOK] Subscription retrieved:", subscription.id);
+
             if (!session?.metadata?.userId) {
                 console.error("[STRIPE_WEBHOOK] User ID missing in metadata");
                 return new NextResponse("User ID is missing in metadata", { status: 400 });
             }
 
+            console.log("[STRIPE_WEBHOOK] User ID from metadata:", session.metadata.userId);
+
             await dbConnect();
+            console.log("[STRIPE_WEBHOOK] Database connected");
 
             const plan = session.metadata.planName === 'Business' ? 'business' : 'pro';
+            console.log("[STRIPE_WEBHOOK] Plan determined:", plan);
 
-            await User.findByIdAndUpdate(session.metadata.userId, {
-                stripeSubscriptionId: subscription.id,
-                stripeCustomerId: subscription.customer as string,
-                stripePriceId: subscription.items.data[0].price.id,
-                stripeCurrentPeriodEnd: new Date(
-                    (subscription as any).current_period_end * 1000
-                ),
-                plan: plan,
-                subscriptionStatus: 'active',
-            });
+            const updateResult = await User.findByIdAndUpdate(
+                session.metadata.userId,
+                {
+                    stripeSubscriptionId: subscription.id,
+                    stripeCustomerId: subscription.customer as string,
+                    stripePriceId: subscription.items.data[0].price.id,
+                    stripeCurrentPeriodEnd: new Date(
+                        (subscription as any).current_period_end * 1000
+                    ),
+                    plan: plan,
+                    subscriptionStatus: 'active',
+                },
+                { new: true } // Return updated document
+            );
 
-            console.log("[STRIPE_WEBHOOK] User plan updated to:", plan);
+            if (!updateResult) {
+                console.error("[STRIPE_WEBHOOK] User not found with ID:", session.metadata.userId);
+                return new NextResponse("User not found", { status: 404 });
+            }
+
+            console.log("[STRIPE_WEBHOOK] User plan updated successfully to:", plan);
+            console.log("[STRIPE_WEBHOOK] Updated user:", updateResult._id);
         }
 
         if (event.type === "invoice.payment_succeeded") {
