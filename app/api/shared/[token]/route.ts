@@ -6,9 +6,9 @@ import Document from "@/models/Document";
 import Vehicle from "@/models/Vehicle";
 import User from "@/models/User";
 
-export async function GET(req: Request, { params }: { params: { token: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
     try {
-        const { token } = params;
+        const { token } = await params;
         if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 
         await dbConnect();
