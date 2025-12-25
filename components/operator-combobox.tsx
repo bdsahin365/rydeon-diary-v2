@@ -40,41 +40,76 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
     const isMobile = useMediaQuery("(max-width: 768px)")
 
     const OperatorList = () => (
-        <Command>
-            <CommandInput placeholder="Search operator..." value={inputValue} onValueChange={setInputValue} />
-            <CommandList>
-                <CommandEmpty>
-                    <Button variant="ghost" className="w-full justify-start" onClick={() => {
-                        const newOp: Operator = { name: inputValue, chargesCommission: false, id: Math.random().toString() };
-                        onOperatorCreated(newOp);
-                        onChange(inputValue);
-                        setOpen(false);
-                    }}>
-                        <Plus className="mr-2 h-4 w-4" /> Create &quot;{inputValue}&quot;
-                    </Button>
-                </CommandEmpty>
-                <CommandGroup>
-                    {operators.map((operator) => (
-                        <CommandItem
-                            key={operator.id || operator._id}
-                            value={operator.name}
-                            onSelect={(currentValue) => {
-                                onChange(currentValue === value ? "" : currentValue)
-                                setOpen(false)
+        <div
+            onMouseDown={(e) => {
+                // Prevent input from losing focus on desktop
+                if (!isMobile) {
+                    const target = e.target as HTMLElement;
+                    if (!target.closest('input')) {
+                        e.preventDefault();
+                    }
+                }
+            }}
+            onTouchStart={(e) => {
+                // Prevent input from losing focus on mobile
+                const target = e.target as HTMLElement;
+                if (!target.closest('input')) {
+                    e.preventDefault();
+                }
+            }}
+        >
+            <Command>
+                <CommandInput
+                    placeholder="Search operator..."
+                    value={inputValue}
+                    onValueChange={setInputValue}
+                    autoFocus
+                />
+                <CommandList>
+                    <CommandEmpty>
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onPointerDown={(e) => {
+                                e.preventDefault();
+                            }}
+                            onClick={() => {
+                                const newOp: Operator = { name: inputValue, chargesCommission: false, id: Math.random().toString() };
+                                onOperatorCreated(newOp);
+                                onChange(inputValue);
+                                setOpen(false);
                             }}
                         >
-                            <Check
-                                className={cn(
-                                    "mr-2 h-4 w-4",
-                                    value === operator.name ? "opacity-100" : "opacity-0"
-                                )}
-                            />
-                            {operator.name}
-                        </CommandItem>
-                    ))}
-                </CommandGroup>
-            </CommandList>
-        </Command>
+                            <Plus className="mr-2 h-4 w-4" /> Create &quot;{inputValue}&quot;
+                        </Button>
+                    </CommandEmpty>
+                    <CommandGroup>
+                        {operators.map((operator) => (
+                            <CommandItem
+                                key={operator.id || operator._id}
+                                value={operator.name}
+                                onPointerDown={(e) => {
+                                    // Prevent input from losing focus
+                                    e.preventDefault();
+                                }}
+                                onSelect={(currentValue) => {
+                                    onChange(currentValue === value ? "" : currentValue)
+                                    setOpen(false)
+                                }}
+                            >
+                                <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        value === operator.name ? "opacity-100" : "opacity-0"
+                                    )}
+                                />
+                                {operator.name}
+                            </CommandItem>
+                        ))}
+                    </CommandGroup>
+                </CommandList>
+            </Command>
+        </div>
     );
 
     if (isMobile) {

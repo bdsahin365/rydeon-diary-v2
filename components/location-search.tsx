@@ -265,12 +265,18 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                         <div
                             className="overflow-y-auto max-h-[60vh]"
                             onMouseDown={(e) => {
-                                // Prevent input from losing focus when clicking suggestions
-                                e.preventDefault();
+                                // Only prevent default if NOT clicking on a button
+                                const target = e.target as HTMLElement;
+                                if (!target.closest('button')) {
+                                    e.preventDefault();
+                                }
                             }}
                             onTouchStart={(e) => {
-                                // Prevent input from losing focus on touch devices
-                                e.preventDefault();
+                                // Only prevent default if NOT clicking on a button
+                                const target = e.target as HTMLElement;
+                                if (!target.closest('button')) {
+                                    e.preventDefault();
+                                }
                             }}
                         >
                             <SuggestionsList isMobileDrawer={true} />
