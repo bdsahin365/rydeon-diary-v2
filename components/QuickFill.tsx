@@ -64,7 +64,7 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                             placeholder="Paste job details here (e.g. from WhatsApp/Email)..."
                             value={pastedMessage}
                             onChange={(e) => setPastedMessage(e.target.value)}
-                            className="resize-none text-base min-h-[150px] flex-1 overflow-y-auto"
+                            className="resize-none text-base min-h-[100px] flex-1 overflow-y-auto"
                             autoFocus
                             suppressHydrationWarning
                         />
