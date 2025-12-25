@@ -14,6 +14,7 @@ import {
     LifeBuoy,
     Settings,
     LogOut,
+    Share2,
 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ const sidebarItems = [
     { icon: Briefcase, label: "My Jobs", href: "/my-jobs" },
     { icon: Calendar, label: "Calendar", href: "/calendar" },
     { icon: Wallet, label: "Earnings", href: "/earnings" },
-    { icon: Car, label: "Vehicle Manager", href: "/vehicle-manager" },
+    { icon: Share2, label: "Channels", href: "/channels" },
     { icon: MessageSquare, label: "Messages", href: "/messages" },
 ];
 

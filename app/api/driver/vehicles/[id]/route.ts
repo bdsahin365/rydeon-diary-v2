@@ -5,14 +5,14 @@ import Vehicle from "@/models/Vehicle";
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await auth();
         if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const data = await req.json();
-        const { id } = params;
+        const { id } = await params;
 
         await dbConnect();
 
@@ -34,13 +34,13 @@ export async function PATCH(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await auth();
         if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const { id } = params;
+        const { id } = await params;
         await dbConnect();
 
         const vehicle = await Vehicle.findOneAndDelete({ _id: id, userId: session.user.id });
