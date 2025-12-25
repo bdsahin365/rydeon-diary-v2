@@ -53,35 +53,34 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                         <Plus className="w-4 h-4 text-muted-foreground" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent>
-                    <DrawerHeader className="text-left">
+                <DrawerContent className="max-h-[85vh]">
+                    <DrawerHeader className="text-left flex-shrink-0">
                         <DrawerTitle className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-primary" /> Auto-Fill Job Details
                         </DrawerTitle>
                     </DrawerHeader>
-                    <div className="p-4 pt-0 space-y-4">
+                    <div className="p-4 pt-0 flex flex-col gap-3 flex-1 overflow-hidden">
                         <Textarea
                             placeholder="Paste job details here (e.g. from WhatsApp/Email)..."
                             value={pastedMessage}
                             onChange={(e) => setPastedMessage(e.target.value)}
-                            rows={8}
-                            className="resize-none text-base min-h-[120px] max-h-[300px] overflow-y-auto"
+                            className="resize-none text-base min-h-[120px] max-h-[200px] overflow-y-auto flex-shrink-0"
                             autoFocus
                             suppressHydrationWarning
                         />
-                        <Button
-                            className="w-full"
-                            onClick={handleParse}
-                            disabled={isParsing || !pastedMessage}
-                        >
-                            {isParsing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                            Process & Fill Form
-                        </Button>
-                        <DrawerFooter className="pt-2 px-0">
+                        <div className="flex-shrink-0 space-y-3">
+                            <Button
+                                className="w-full"
+                                onClick={handleParse}
+                                disabled={isParsing || !pastedMessage}
+                            >
+                                {isParsing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                Process & Fill Form
+                            </Button>
                             <DrawerClose asChild>
-                                <Button variant="outline">Cancel</Button>
+                                <Button variant="outline" className="w-full">Cancel</Button>
                             </DrawerClose>
-                        </DrawerFooter>
+                        </div>
                     </div>
                 </DrawerContent>
             </Drawer>
