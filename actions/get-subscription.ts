@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import { getEffectiveLimits, isSubscriptionActive } from "@/lib/feature-gate";
 
 export type UserPlan = 'free' | 'pro' | 'business';
 
@@ -18,6 +19,13 @@ export interface SubscriptionData {
         dataExport: boolean;
         teamManagement: boolean;
         apiAccess: boolean;
+
+        // Diary Features
+        canViewHistory: boolean;
+        aiSummaryLimit: number;
+        canUseMoodAnalytics: boolean;
+        canSearchEntries: boolean;
+        maxEntriesPerDay: number;
     };
 }
 
@@ -38,22 +46,31 @@ export async function getSubscription(): Promise<SubscriptionData | null> {
         }
 
         const plan: UserPlan = user.plan || 'free';
-        const isActive = user.subscriptionStatus === 'active' || plan === 'free';
+        const subscriptionStatus = user.subscriptionStatus || 'active';
+        const stripeCurrentPeriodEnd = user.stripeCurrentPeriodEnd || null;
 
-        // Define feature access based on plan
+        // Calculate effective limits (handling grace periods, etc.)
+        const diaryLimits = getEffectiveLimits(plan, subscriptionStatus, stripeCurrentPeriodEnd);
+        const isActive = isSubscriptionActive(subscriptionStatus, stripeCurrentPeriodEnd);
+
+        // Define feature access based on plan (Legacy + New Diary features)
         const features = {
+            // Legacy Job Features
             unlimitedJobs: plan === 'pro' || plan === 'business',
             advancedAnalytics: plan === 'pro' || plan === 'business',
             prioritySupport: plan === 'pro' || plan === 'business',
             dataExport: plan === 'pro' || plan === 'business',
             teamManagement: plan === 'business',
             apiAccess: plan === 'business',
+
+            // New Diary Features
+            ...diaryLimits
         };
 
         return {
             plan,
-            subscriptionStatus: user.subscriptionStatus || 'active',
-            stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd || null,
+            subscriptionStatus,
+            stripeCurrentPeriodEnd,
             isActive,
             features,
         };

@@ -57,13 +57,16 @@ export async function POST(req: Request) {
         console.log("[STRIPE_CHECKOUT] Creating session for user:", session.user.id, "plan:", planName);
 
         // Create Checkout Session
-        const stripeSession = await stripe.checkout.sessions.create({
+        // Check if user already has a Stripe Customer ID
+        let customerId = user.stripeCustomerId;
+
+        // Create Checkout Session
+        const sessionConfig: Stripe.Checkout.SessionCreateParams = {
             success_url: `${billingUrl}/pro?success=true`,
             cancel_url: `${billingUrl}/pro?canceled=true`,
             payment_method_types: ["card"],
             mode: "subscription",
             billing_address_collection: "auto",
-            customer_email: user.email,
             line_items: [
                 {
                     price: priceId,
@@ -74,7 +77,21 @@ export async function POST(req: Request) {
                 userId: session.user.id,
                 planName: planName || "Pro"
             },
-        });
+        };
+
+        // If user already has a Stripe Customer ID, use it
+        if (customerId) {
+            sessionConfig.customer = customerId;
+            sessionConfig.customer_update = {
+                address: 'auto',
+                name: 'auto',
+            };
+        } else {
+            // Otherwise, let Stripe create a new customer using their email
+            sessionConfig.customer_email = user.email;
+        }
+
+        const stripeSession = await stripe.checkout.sessions.create(sessionConfig);
 
         console.log("[STRIPE_CHECKOUT] Session created successfully:", stripeSession.id);
 

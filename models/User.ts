@@ -36,7 +36,16 @@ const UserSchema = new mongoose.Schema(
         },
         subscriptionStatus: {
             type: String,
-            default: "active",
+            enum: ['trialing', 'active', 'past_due', 'canceled', 'expired', 'incomplete'],
+            default: "active", // Default to active for now, logic will handle transitions
+        },
+        timezone: {
+            type: String,
+            default: "UTC",
+        },
+        language: {
+            type: String,
+            default: "en",
         },
         stripeCustomerId: {
             type: String,

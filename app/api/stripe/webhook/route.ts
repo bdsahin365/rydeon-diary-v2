@@ -88,7 +88,7 @@ export async function POST(req: Request) {
                         (subscription as any).current_period_end * 1000
                     ),
                     plan: plan,
-                    subscriptionStatus: 'active',
+                    subscriptionStatus: subscription.status, // Use actual status from Stripe (active, trialing, etc.)
                 };
 
                 console.log("[STRIPE_WEBHOOK] Updating user with data:", JSON.stringify(updateData, null, 2));
@@ -114,6 +114,8 @@ export async function POST(req: Request) {
             }
         }
 
+        return new NextResponse(null, { status: 200 });
+
         if (event.type === "invoice.payment_succeeded") {
             const invoice = event.data.object as Stripe.Invoice;
 
@@ -136,12 +138,37 @@ export async function POST(req: Request) {
                         stripeCurrentPeriodEnd: new Date(
                             (subscription as any).current_period_end * 1000
                         ),
-                        subscriptionStatus: 'active',
+                        subscriptionStatus: subscription.status, // e.g., 'active'
                     }
                 }
             );
 
             console.log("[STRIPE_WEBHOOK] Subscription renewed:", subscription.id);
+            return new NextResponse(null, { status: 200 });
+        }
+
+        if (event.type === "invoice.payment_failed") {
+            const invoice = event.data.object as Stripe.Invoice;
+            const subscriptionId = (invoice as any).subscription as string;
+
+            if (subscriptionId) {
+                await dbConnect();
+                await User.findOneAndUpdate(
+                    { stripeSubscriptionId: subscriptionId },
+                    { $set: { subscriptionStatus: 'past_due' } }
+                );
+                console.log("[STRIPE_WEBHOOK] Payment failed, marked past_due:", subscriptionId);
+                // TODO: Trigger email notification here
+            }
+            return new NextResponse(null, { status: 200 });
+        }
+
+        // Handle subscription.created separately if needed, but checkout.session.completed usually covers the initial flow.
+        // However, if trials are created without checkout (e.g. via API), we need this.
+        if (event.type === "customer.subscription.created") {
+            // checks if already handled by checkout session
+            // For now, checkout.session.completed is the primary driver for initial setup
+            return new NextResponse(null, { status: 200 });
         }
 
         if (event.type === "customer.subscription.deleted") {
@@ -160,6 +187,7 @@ export async function POST(req: Request) {
             );
 
             console.log("[STRIPE_WEBHOOK] Subscription cancelled:", subscription.id);
+            return new NextResponse(null, { status: 200 });
         }
 
         return new NextResponse(null, { status: 200 });
