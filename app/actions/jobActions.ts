@@ -18,6 +18,8 @@ export async function getJobs(filter?: string, dateFrom?: string, dateTo?: strin
         let query: any = { userId: session.user.id };
         if (filter && filter !== 'all') {
             query.status = filter;
+        } else {
+            query.status = { $ne: 'archived' };
         }
 
         // Fetch all matching jobs first
@@ -71,6 +73,58 @@ export async function getJobs(filter?: string, dateFrom?: string, dateTo?: strin
     } catch (error) {
         console.error("Error fetching jobs:", error);
         return [];
+    }
+}
+
+export async function getJobCounts() {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return {
+            all: 0,
+            scheduled: 0,
+            completed: 0,
+            cancelled: 0,
+            archived: 0
+        };
+    }
+    await dbConnect();
+
+    try {
+        const counts = await Job.aggregate([
+            { $match: { userId: session.user.id } },
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]);
+
+        const result = {
+            all: 0,
+            scheduled: 0,
+            completed: 0,
+            cancelled: 0,
+            archived: 0
+        };
+
+        let allCount = 0;
+        counts.forEach((item: any) => {
+            const status = item._id || 'unknown';
+            if (status !== 'archived') {
+                allCount += item.count;
+            }
+            if (Object.prototype.hasOwnProperty.call(result, status)) {
+                (result as any)[status] = item.count;
+            }
+        });
+
+        result.all = allCount;
+        return result;
+    } catch (error) {
+        console.error("Error fetching job counts:", error);
+        return {
+            all: 0,
+            scheduled: 0,
+            completed: 0,
+            cancelled: 0,
+            archived: 0
+        };
     }
 }
 

@@ -95,6 +95,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
     const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
     const isPickupAirport = job.pickup?.toLowerCase().includes('airport') || false;
     const isDropoffAirport = job.dropoff?.toLowerCase().includes('airport') || false;
@@ -300,15 +301,15 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
     return (
         <>
             <Card
-                className="bg-card text-card-foreground rounded-xl border py-3 group border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer"
+                className="bg-card text-card-foreground rounded-xl border py-2 sm:py-3 group border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer"
                 onClick={() => setDetailsSheetOpen(true)}
             >
-                <CardContent className="px-5 py-0">
+                <CardContent className="px-3 sm:px-5 py-0">
                     {/* Card Header */}
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-1 sm:mb-2">
                         <div className="flex flex-col gap-0.5 min-w-0">
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-foreground text-base group-hover:text-primary transition-colors truncate">
+                                <span className="font-bold text-foreground text-sm sm:text-base group-hover:text-primary transition-colors truncate">
                                     {displayName}
                                 </span>
                                 <Badge
@@ -323,15 +324,15 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                                     {displayStatus}
                                 </Badge>
                             </div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                            <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
                                 <CalendarIcon className="h-3 w-3 shrink-0" />
                                 <span className="truncate">{displayDate}</span>
                             </div>
                         </div>
-                        <div className="flex items-start gap-3 shrink-0 ml-2">
+                        <div className="flex items-start gap-1.5 sm:gap-3 shrink-0 ml-2">
                             <div className="text-right">
-                                <div className="text-lg font-bold text-green-500">£{profitValue.toFixed(2)}</div>
-                                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">profit</div>
+                                <div className="text-base sm:text-lg font-bold text-green-500">£{profitValue.toFixed(2)}</div>
+                                <div className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide">profit</div>
                             </div>
                             <div onClick={(e) => e.stopPropagation()}>
                                 <DropdownMenu>
@@ -339,7 +340,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground hover:text-foreground"
+                                            className="h-7 w-7 sm:h-8 sm:w-8 -mt-1 -mr-2 text-muted-foreground hover:text-foreground"
                                             aria-label="More options"
                                         >
                                             <MoreVertical className="h-4 w-4" />
@@ -382,10 +383,10 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
 
                                         <DropdownMenuItem onClick={(e) => {
                                             e.stopPropagation();
-                                            handleArchive();
+                                            setArchiveDialogOpen(true);
                                         }}>
                                             <Archive className="mr-2 h-4 w-4" />
-                                            <span>Archive</span>
+                                            <span>Move to Archive</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={(e) => {
                                             e.stopPropagation();
@@ -401,41 +402,41 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                     </div>
 
                     {/* Route */}
-                    <div className="relative space-y-3 mb-2">
+                    <div className="relative space-y-2 sm:space-y-3 mb-1 sm:mb-2">
                         {/* Vertical Line */}
-                        <div className="absolute left-3 top-3 bottom-3 w-0.5 bg-border -ml-[1px] group-hover:bg-primary/20 transition-colors"></div>
+                        <div className="absolute left-2.5 sm:left-3 top-2 sm:top-3 bottom-2 sm:bottom-3 w-0.5 bg-border -ml-[1px] group-hover:bg-primary/20 transition-colors"></div>
 
                         {/* Pickup */}
-                        <div className="flex items-start gap-3 relative z-10">
-                            <div className="w-6 flex justify-center mt-1 shrink-0">
+                        <div className="flex items-start gap-2.5 sm:gap-3 relative z-10">
+                            <div className="w-5 sm:w-6 flex justify-center mt-1 shrink-0">
                                 {isPickupAirport ? (
                                     <div className="bg-card rounded-full p-0.5">
-                                        <FlightLandingIcon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                        <FlightLandingIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                                     </div>
                                 ) : (
-                                    <div className="w-2.5 h-2.5 rounded-full bg-card border-2 border-muted-foreground group-hover:border-primary transition-colors shadow-sm"></div>
+                                    <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-card border-2 border-muted-foreground group-hover:border-primary transition-colors shadow-sm"></div>
                                 )}
                             </div>
                             <div className="flex-1 flex justify-between items-start min-w-0">
-                                <span className="text-foreground font-medium text-sm leading-tight pt-0.5 truncate pr-2" title={pickupLocation}>
+                                <span className="text-foreground font-medium text-xs sm:text-sm leading-tight pt-0.5 truncate pr-2" title={pickupLocation}>
                                     {pickupLocation}
                                 </span>
                             </div>
                         </div>
 
                         {/* Dropoff */}
-                        <div className="flex items-start gap-3 relative z-10">
-                            <div className="w-6 flex justify-center mt-1 shrink-0">
+                        <div className="flex items-start gap-2.5 sm:gap-3 relative z-10">
+                            <div className="w-5 sm:w-6 flex justify-center mt-1 shrink-0">
                                 <div className="bg-card rounded-full p-0.5">
                                     {isDropoffAirport ? (
-                                        <FlightTakeoffIcon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                        <FlightTakeoffIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                                     ) : (
-                                        <MapPin className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                        <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                                     )}
                                 </div>
                             </div>
                             <div className="flex-1 flex justify-between items-start min-w-0">
-                                <span className="text-foreground font-medium text-sm leading-tight pt-0.5 truncate pr-2" title={dropoffLocation}>
+                                <span className="text-foreground font-medium text-xs sm:text-sm leading-tight pt-0.5 truncate pr-2" title={dropoffLocation}>
                                     {dropoffLocation}
                                 </span>
                             </div>
@@ -443,27 +444,27 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                     </div>
 
                     {/* Footer Details */}
-                    <div className="flex justify-between items-start pt-2 border-t border-border mt-2">
+                    <div className="flex justify-between items-center pt-1.5 sm:pt-2 border-t border-border mt-1.5 sm:mt-2">
                         <div className="flex items-center gap-2 min-w-0">
-                            <div className="bg-muted px-2 py-1 rounded-md flex items-center gap-2 border border-border shrink-0">
-                                <Car className="h-3.5 w-3.5 text-muted-foreground" />
-                                <span className="text-xs font-medium text-foreground whitespace-nowrap">{vehicleType}</span>
-                                <span className="text-muted-foreground text-xs">|</span>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">{distance}</span>
+                            <div className="bg-muted px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md flex items-center gap-1.5 sm:gap-2 border border-border shrink-0">
+                                <Car className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
+                                <span className="text-[10px] sm:text-xs font-medium text-foreground whitespace-nowrap">{vehicleType}</span>
+                                <span className="text-muted-foreground text-[10px] sm:text-xs">|</span>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">{distance}</span>
                                 {job.duration && (
                                     <>
-                                        <span className="text-muted-foreground text-xs">•</span>
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap">{job.duration}</span>
+                                        <span className="text-muted-foreground text-[10px] sm:text-xs">•</span>
+                                        <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">{job.duration}</span>
                                     </>
                                 )}
                                 {isAirportJob && (
                                     <>
-                                        <span className="text-muted-foreground text-xs">|</span>
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                                        <span className="text-muted-foreground text-[10px] sm:text-xs">|</span>
+                                        <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1">
                                             {isPickupAirport ? (
-                                                <FlightLandingIcon className="h-3 w-3" />
+                                                <FlightLandingIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                             ) : (
-                                                <FlightTakeoffIcon className="h-3 w-3" />
+                                                <FlightTakeoffIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                             )}
                                             Airport
                                         </span>
@@ -473,8 +474,8 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                         </div>
 
                         <div className="text-right shrink-0 ml-2">
-                            <div className="text-base font-bold text-foreground">£{priceValue.toFixed(2)}</div>
-                            <div className={`text-[10px] font-bold uppercase tracking-wider ${isPaid ? 'text-green-600' : isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
+                            <div className="text-sm sm:text-base font-bold text-foreground">£{priceValue.toFixed(2)}</div>
+                            <div className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${isPaid ? 'text-green-600' : isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
                                 {paymentStatus}
                             </div>
                         </div>
@@ -488,6 +489,27 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
                 open={detailsSheetOpen}
                 onOpenChange={setDetailsSheetOpen}
             />
+
+            {/* Archive Confirmation Dialog */}
+            <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Move job to Archive?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will hide the job from your main view but keep it in the database for your records.
+                            You can restore it later if needed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleArchive}
+                        >
+                            Move to Archive
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -18,6 +18,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    Drawer,
+    DrawerContent,
+    DrawerTrigger,
+    DrawerTitle,
+} from "@/components/ui/drawer"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { Operator } from "@/types"
 
 interface OperatorComboboxProps {
@@ -30,6 +37,75 @@ interface OperatorComboboxProps {
 export function OperatorCombobox({ operators, value, onChange, onOperatorCreated }: OperatorComboboxProps) {
     const [open, setOpen] = React.useState(false)
     const [inputValue, setInputValue] = React.useState("")
+    const isMobile = useMediaQuery("(max-width: 768px)")
+
+    const OperatorList = () => (
+        <Command>
+            <CommandInput placeholder="Search operator..." value={inputValue} onValueChange={setInputValue} />
+            <CommandList>
+                <CommandEmpty>
+                    <Button variant="ghost" className="w-full justify-start" onClick={() => {
+                        const newOp: Operator = { name: inputValue, chargesCommission: false, id: Math.random().toString() };
+                        onOperatorCreated(newOp);
+                        onChange(inputValue);
+                        setOpen(false);
+                    }}>
+                        <Plus className="mr-2 h-4 w-4" /> Create &quot;{inputValue}&quot;
+                    </Button>
+                </CommandEmpty>
+                <CommandGroup>
+                    {operators.map((operator) => (
+                        <CommandItem
+                            key={operator.id || operator._id}
+                            value={operator.name}
+                            onSelect={(currentValue) => {
+                                onChange(currentValue === value ? "" : currentValue)
+                                setOpen(false)
+                            }}
+                        >
+                            <Check
+                                className={cn(
+                                    "mr-2 h-4 w-4",
+                                    value === operator.name ? "opacity-100" : "opacity-0"
+                                )}
+                            />
+                            {operator.name}
+                        </CommandItem>
+                    ))}
+                </CommandGroup>
+            </CommandList>
+        </Command>
+    );
+
+    if (isMobile) {
+        return (
+            <Drawer open={open} onOpenChange={setOpen}>
+                <DrawerTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between h-10"
+                    >
+                        <span className="truncate text-left">
+                            {value
+                                ? operators.find((op) => op.name === value)?.name || value
+                                : "Select operator..."}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                    <div className="sr-only">
+                        <DrawerTitle>Select Operator</DrawerTitle>
+                    </div>
+                    <div className="mt-4 border-t">
+                        <OperatorList />
+                    </div>
+                </DrawerContent>
+            </Drawer>
+        );
+    }
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -48,41 +124,7 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
-                <Command>
-                    <CommandInput placeholder="Search operator..." value={inputValue} onValueChange={setInputValue} />
-                    <CommandList>
-                        <CommandEmpty>
-                            <Button variant="ghost" className="w-full justify-start" onClick={() => {
-                                const newOp: Operator = { name: inputValue, chargesCommission: false, id: Math.random().toString() };
-                                onOperatorCreated(newOp);
-                                onChange(inputValue);
-                                setOpen(false);
-                            }}>
-                                <Plus className="mr-2 h-4 w-4" /> Create &quot;{inputValue}&quot;
-                            </Button>
-                        </CommandEmpty>
-                        <CommandGroup>
-                            {operators.map((operator) => (
-                                <CommandItem
-                                    key={operator.id || operator._id}
-                                    value={operator.name}
-                                    onSelect={(currentValue) => {
-                                        onChange(currentValue === value ? "" : currentValue)
-                                        setOpen(false)
-                                    }}
-                                >
-                                    <Check
-                                        className={cn(
-                                            "mr-2 h-4 w-4",
-                                            value === operator.name ? "opacity-100" : "opacity-0"
-                                        )}
-                                    />
-                                    {operator.name}
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
+                <OperatorList />
             </PopoverContent>
         </Popover>
     )

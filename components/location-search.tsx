@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMapbox } from '@/hooks/use-mapbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from '@/components/ui/drawer';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Search, X, MapPin } from 'lucide-react';
@@ -162,83 +165,134 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
         }
     }, [open]);
 
+    const isMobile = useMediaQuery("(max-width: 768px)");
+
+    // Suggestions List Component
+    const SuggestionsList = () => (
+        <div className="flex flex-col space-y-1 p-2 w-full">
+            {isLoading && (
+                <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            )}
+            {!isLoading && suggestions.length === 0 && String(debouncedValue).length > 2 && (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                    No results found.
+                </div>
+            )}
+            {!isLoading && suggestions.map((suggestion) => (
+                <Button
+                    key={suggestion.place_id}
+                    variant="ghost"
+                    className="h-auto justify-start gap-2 w-full px-2 py-3"
+                    onClick={() => handleSelect(suggestion)}
+                >
+                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="text-left w-full overflow-hidden">
+                        <p className="font-semibold truncate">{suggestion.text}</p>
+                        <p className="text-xs text-muted-foreground truncate">{suggestion.place_name}</p>
+                    </div>
+                </Button>
+            ))}
+        </div>
+    );
+
     const triggerWidth = triggerRef.current?.offsetWidth || 0;
 
-    // Use conditional rendering instead of conditional returns to maintain hooks order
-    return (
-        <>
-            {!isLoaded || !mapboxToken ? (
-                <div className="relative">
-                    <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        value={inputValue}
-                        onChange={handleInputChange}
-                        placeholder={placeholder || "Enter location..."}
-                        className="pl-10"
-                        disabled
-                    />
-                    <div className="text-xs text-muted-foreground mt-1">
-                        Location search requires Mapbox configuration
-                    </div>
+    if (!isLoaded || !mapboxToken) {
+        return (
+            <div className="relative">
+                <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    placeholder={placeholder || "Enter location..."}
+                    className="pl-10"
+                    disabled
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                    Location search requires Mapbox configuration
                 </div>
-            ) : (
-                <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                        <div className="relative w-full" ref={triggerRef}>
-                            <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
+        );
+    }
+
+    if (isMobile) {
+        return (
+            <Drawer open={open} onOpenChange={setOpen}>
+                <DrawerTrigger asChild>
+                    <div className="relative w-full">
+                        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <div className={cn(
+                            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 items-center overflow-hidden whitespace-nowrap",
+                            !inputValue && "text-muted-foreground"
+                        )}>
+                            <span className="truncate w-full text-left flex-1 min-w-0">
+                                {inputValue || placeholder || "Search for a location..."}
+                            </span>
+                        </div>
+                    </div>
+                </DrawerTrigger>
+                <DrawerContent className="h-[80vh]">
+                    <div className="sr-only">
+                        <DrawerTitle>Search Location</DrawerTitle>
+                    </div>
+                    <div className="p-4 space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 value={inputValue}
                                 onChange={handleInputChange}
                                 placeholder={placeholder || "Search for a location..."}
-                                className="pl-10 pr-10"
-                                disabled={!isLoaded}
-                                onClick={() => setOpen(true)}
+                                className="pl-10 h-12 text-base"
+                                autoFocus
                             />
                             {inputValue && (
-                                <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={(e) => {
-                                    e.stopPropagation();
-                                    setInputValue('');
-                                }}>
+                                <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setInputValue('')}>
                                     <X className="h-4 w-4" />
                                 </Button>
                             )}
                         </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                        style={{ width: `${triggerWidth}px` }}
-                        className="p-0"
-                        align="start"
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                    >
-                        <div className="flex flex-col space-y-1 p-2">
-                            {isLoading && (
-                                <div className="flex items-center justify-center p-4">
-                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                                </div>
-                            )}
-                            {!isLoading && suggestions.length === 0 && String(debouncedValue).length > 2 && (
-                                <div className="p-4 text-center text-sm text-muted-foreground">
-                                    No results found.
-                                </div>
-                            )}
-                            {!isLoading && suggestions.map((suggestion) => (
-                                <Button
-                                    key={suggestion.place_id}
-                                    variant="ghost"
-                                    className="h-auto justify-start gap-2"
-                                    onClick={() => handleSelect(suggestion)}
-                                >
-                                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                                    <div className="text-left">
-                                        <p className="font-semibold">{suggestion.text}</p>
-                                        <p className="text-xs text-muted-foreground">{suggestion.place_name}</p>
-                                    </div>
-                                </Button>
-                            ))}
+                        <div className="overflow-y-auto max-h-[60vh]">
+                            <SuggestionsList />
                         </div>
-                    </PopoverContent>
-                </Popover>
-            )}
-        </>
+                    </div>
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <div className="relative w-full" ref={triggerRef}>
+                    <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        value={inputValue}
+                        onChange={handleInputChange}
+                        placeholder={placeholder || "Search for a location..."}
+                        className="pl-10 pr-10"
+                        disabled={!isLoaded}
+                        onClick={() => setOpen(true)}
+                    />
+                    {inputValue && (
+                        <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={(e) => {
+                            e.stopPropagation();
+                            setInputValue('');
+                        }}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            </PopoverTrigger>
+            <PopoverContent
+                style={{ width: `${triggerWidth}px` }}
+                className="p-0"
+                align="start"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+            >
+                <SuggestionsList />
+            </PopoverContent>
+        </Popover>
     );
 }

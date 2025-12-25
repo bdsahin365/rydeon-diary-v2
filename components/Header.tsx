@@ -5,7 +5,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { SidebarContent } from "@/components/Sidebar";
 import { useSession } from "next-auth/react";
 import { UserMenu } from "@/components/auth/UserMenu";
@@ -24,6 +24,7 @@ export function Header() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="w-64 p-4 pt-10" aria-describedby={undefined} id="mobile-sidebar">
+                        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                         <SidebarContent />
                     </SheetContent>
                 </Sheet>

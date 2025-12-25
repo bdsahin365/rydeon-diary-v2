@@ -30,6 +30,9 @@ import { TimePicker } from '@/components/time-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { QuickFill } from '@/components/QuickFill';
+import { ResponsiveSelect } from '@/components/responsive-select';
+import { ResponsiveDatePicker } from '@/components/responsive-date-picker';
 
 const EMPTY_JOB: Partial<MyJob> = {
     pickup: '',
@@ -300,10 +303,21 @@ export default function AddJobPage() {
                 body: JSON.stringify(jobToSave)
             });
 
+
             if (response.ok) {
                 toast({ title: 'Job Saved!', description: 'The new job has been added to your diary.', className: 'bg-green-100' });
                 router.push('/my-jobs');
             } else {
+                const data = await response.json();
+                if (response.status === 403) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Limit Reached',
+                        description: data.error || 'You have reached the free plan limit.',
+                        action: { label: "Upgrade", onClick: () => router.push('/pro') }
+                    });
+                    return; // Stop here
+                }
                 throw new Error('Failed to save job');
             }
         } catch (error) {
@@ -338,26 +352,12 @@ export default function AddJobPage() {
 
             {currentStep === 'trip' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <Card className="border-dashed border-2 shadow-none bg-muted/10">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-base font-medium flex items-center gap-2 text-muted-foreground">
-                                <MessageSquare className="w-4 h-4" /> Quick Fill
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <Textarea
-                                placeholder="Paste job details here (e.g. from WhatsApp/Email)..."
-                                value={pastedMessage}
-                                onChange={(e) => setPastedMessage(e.target.value)}
-                                rows={2}
-                                className="resize-none text-sm"
-                            />
-                            <Button size="sm" variant="secondary" onClick={handleParseMessage} disabled={isParsing} className="w-full sm:w-auto">
-                                {isParsing ? <Loader2 className="animate-spin mr-2 h-3 w-3" /> : <Plus className="mr-2 h-3 w-3" />}
-                                Auto-Fill Form
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <QuickFill
+                        pastedMessage={pastedMessage}
+                        setPastedMessage={setPastedMessage}
+                        onParse={handleParseMessage}
+                        isParsing={isParsing}
+                    />
 
                     <div className="grid gap-6 md:grid-cols-2">
                         <div className="space-y-4">
@@ -537,7 +537,7 @@ export default function AddJobPage() {
                         <CardHeader className="pb-3">
                             <CardTitle className="flex items-center gap-2 text-base"><User className="w-4 h-4" /> Client & Trip Details</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="space-y-8 p-6">
                             {/* Client Info */}
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
@@ -556,27 +556,59 @@ export default function AddJobPage() {
                                 </div>
                             </div>
 
-                            <Separator />
+                            <Separator className="my-2" />
+
+                            {/* Status & Payment */}
+                            <div className="grid gap-4 sm:grid-cols-2 bg-muted/30 p-4 rounded-lg border border-dashed">
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">Job Status</Label>
+                                    <ResponsiveSelect
+                                        value={jobDetails.status || 'scheduled'}
+                                        onValueChange={(value) => handleValueChange('status', value)}
+                                        options={[
+                                            { value: 'scheduled', label: 'Scheduled' },
+                                            { value: 'completed', label: 'Completed' },
+                                            { value: 'cancelled', label: 'Cancelled' },
+                                        ]}
+                                        label="Job Status"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">Payment Status</Label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <ResponsiveSelect
+                                            value={jobDetails.paymentStatus || 'unpaid'}
+                                            onValueChange={(value) => handleValueChange('paymentStatus', value as MyJob['paymentStatus'])}
+                                            options={[
+                                                { value: 'unpaid', label: 'Unpaid' },
+                                                { value: 'paid', label: 'Paid' },
+                                                { value: 'payment-scheduled', label: 'Scheduled' },
+                                                { value: 'overdue', label: 'Overdue' },
+                                            ]}
+                                            label="Payment Status"
+                                        />
+                                        {jobDetails.paymentStatus === 'payment-scheduled' && (
+                                            <div className="w-full sm:w-[140px]">
+                                                <ResponsiveDatePicker
+                                                    date={jobDetails.paymentDueDate ? new Date(jobDetails.paymentDueDate) : undefined}
+                                                    setDate={(date) => handleValueChange('paymentDueDate', date ? format(date, 'yyyy-MM-dd') : null)}
+                                                    placeholder="Due Date"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Trip Info */}
                             <div className="grid gap-4 sm:grid-cols-3">
                                 <div className="space-y-2">
                                     <Label className="text-xs text-muted-foreground">Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {jobDetails.bookingDate ? (typeof jobDetails.bookingDate === 'string' ? jobDetails.bookingDate : format(jobDetails.bookingDate, "dd/MM/yyyy")) : 'Select'}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={typeof jobDetails.bookingDate === 'string' ? parse(jobDetails.bookingDate, 'dd/MM/yyyy', new Date()) : jobDetails.bookingDate as Date | undefined}
-                                                onSelect={(date) => handleValueChange('bookingDate', date ? format(date, 'dd/MM/yyyy') : '')}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <ResponsiveDatePicker
+                                        date={typeof jobDetails.bookingDate === 'string' && jobDetails.bookingDate ? parse(jobDetails.bookingDate, 'dd/MM/yyyy', new Date()) : jobDetails.bookingDate as Date | undefined}
+                                        setDate={(date) => handleValueChange('bookingDate', date ? format(date, 'dd/MM/yyyy') : '')}
+                                        placeholder="Select date"
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-xs text-muted-foreground">Time</Label>
@@ -599,127 +631,75 @@ export default function AddJobPage() {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Status & Payment */}
-                            <div className="grid gap-4 sm:grid-cols-2 bg-muted/30 p-4 rounded-lg border border-dashed">
-                                <div className="space-y-2">
-                                    <Label className="text-xs text-muted-foreground">Job Status</Label>
-                                    <Select value={jobDetails.status || 'scheduled'} onValueChange={(value) => handleValueChange('status', value)}>
-                                        <SelectTrigger className="bg-background w-full"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="scheduled">Scheduled</SelectItem>
-                                            <SelectItem value="completed">Completed</SelectItem>
-                                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs text-muted-foreground">Payment Status</Label>
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                        <Select value={jobDetails.paymentStatus || 'unpaid'} onValueChange={(value) => handleValueChange('paymentStatus', value as MyJob['paymentStatus'])}>
-                                            <SelectTrigger className="bg-background w-full flex-1"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="unpaid">Unpaid</SelectItem>
-                                                <SelectItem value="paid">Paid</SelectItem>
-                                                <SelectItem value="payment-scheduled">Scheduled</SelectItem>
-                                                <SelectItem value="overdue">Overdue</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {jobDetails.paymentStatus === 'payment-scheduled' && (
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" className="w-full sm:w-[140px] justify-start text-left font-normal bg-background">
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {jobDetails.paymentDueDate ? format(new Date(jobDetails.paymentDueDate), "dd/MM/yyyy") : 'Due Date'}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={jobDetails.paymentDueDate ? new Date(jobDetails.paymentDueDate) : undefined}
-                                                        onSelect={(date) => handleValueChange('paymentDueDate', date ? format(date, 'yyyy-MM-dd') : null)}
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
                         </CardContent>
                     </Card>
 
                     <div className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-4">
-                            {/* Passengers */}
-                            <Card>
-                                <CardHeader className="pb-2 pt-4 px-4">
-                                    <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
-                                        <User className="w-3 h-3" /> Passengers
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="px-4 pb-4 pt-0 space-y-3">
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Adults</span>
-                                        <NumberStepper value={jobDetails.passengers?.adults || 0} onChange={(val) => handlePassengerChange('adults', val)} />
+                        <Card className="h-full">
+                            <CardHeader className="pb-3 px-4 pt-4">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
+                                    <Briefcase className="w-3 h-3" /> Requirements
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="px-4 pb-4 pt-0 space-y-5">
+                                {/* Passengers */}
+                                <div className="space-y-3">
+                                    <Label className="text-xs text-primary font-semibold">Passengers</Label>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm">Adults</span>
+                                            <NumberStepper value={jobDetails.passengers?.adults || 0} onChange={(val) => handlePassengerChange('adults', val)} />
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm">Children</span>
+                                            <NumberStepper value={jobDetails.passengers?.children || 0} onChange={(val) => handlePassengerChange('children', val)} />
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm">Infants</span>
+                                            <NumberStepper value={jobDetails.passengers?.infants || 0} onChange={(val) => handlePassengerChange('infants', val)} />
+                                        </div>
                                     </div>
-                                    <Separator className="bg-border/40" />
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Children</span>
-                                        <NumberStepper value={jobDetails.passengers?.children || 0} onChange={(val) => handlePassengerChange('children', val)} />
-                                    </div>
-                                    <Separator className="bg-border/40" />
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Infants</span>
-                                        <NumberStepper value={jobDetails.passengers?.infants || 0} onChange={(val) => handlePassengerChange('infants', val)} />
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                </div>
 
-                            {/* Child Seats */}
-                            <Card>
-                                <CardHeader className="pb-2 pt-4 px-4">
-                                    <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
-                                        <Baby className="w-3 h-3" /> Child Seats
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="px-4 pb-4 pt-0 space-y-3">
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Infant Seat <span className="text-xs text-muted-foreground font-normal">(0-1yr)</span></span>
-                                        <NumberStepper value={jobDetails.childSeat?.infant || 0} onChange={(val) => handleChildSeatChange('infant', val)} />
+                                {showChildSeatSection && (
+                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                        <Separator />
+                                        <Label className="text-xs text-primary font-semibold">Child Seats</Label>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm">Infant <span className="text-xs text-muted-foreground">(0-1yr)</span></span>
+                                                <NumberStepper value={jobDetails.childSeat?.infant || 0} onChange={(val) => handleChildSeatChange('infant', val)} />
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm">Child <span className="text-xs text-muted-foreground">(1-4yr)</span></span>
+                                                <NumberStepper value={jobDetails.childSeat?.child || 0} onChange={(val) => handleChildSeatChange('child', val)} />
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm">Booster <span className="text-xs text-muted-foreground">(4yr+)</span></span>
+                                                <NumberStepper value={jobDetails.childSeat?.booster || 0} onChange={(val) => handleChildSeatChange('booster', val)} />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <Separator className="bg-border/40" />
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Child Seat <span className="text-xs text-muted-foreground font-normal">(1-4yr)</span></span>
-                                        <NumberStepper value={jobDetails.childSeat?.child || 0} onChange={(val) => handleChildSeatChange('child', val)} />
-                                    </div>
-                                    <Separator className="bg-border/40" />
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Booster Seat <span className="text-xs text-muted-foreground font-normal">(4yr+)</span></span>
-                                        <NumberStepper value={jobDetails.childSeat?.booster || 0} onChange={(val) => handleChildSeatChange('booster', val)} />
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                )}
 
-                            {/* Luggage */}
-                            <Card>
-                                <CardHeader className="pb-2 pt-4 px-4">
-                                    <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
-                                        <Briefcase className="w-3 h-3" /> Luggage
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="px-4 pb-4 pt-0 space-y-3">
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Cabin Bags</span>
-                                        <NumberStepper value={jobDetails.luggage?.cabin || 0} onChange={(val) => handleLuggageChange('cabin', val)} />
+                                <Separator />
+
+                                {/* Luggage */}
+                                <div className="space-y-3">
+                                    <Label className="text-xs text-primary font-semibold">Luggage</Label>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm">Cabin Bags</span>
+                                            <NumberStepper value={jobDetails.luggage?.cabin || 0} onChange={(val) => handleLuggageChange('cabin', val)} />
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm">Checked Bags</span>
+                                            <NumberStepper value={jobDetails.luggage?.checked || 0} onChange={(val) => handleLuggageChange('checked', val)} />
+                                        </div>
                                     </div>
-                                    <Separator className="bg-border/40" />
-                                    <div className="flex justify-between items-center py-1">
-                                        <span className="text-sm font-medium">Checked Bags</span>
-                                        <NumberStepper value={jobDetails.luggage?.checked || 0} onChange={(val) => handleLuggageChange('checked', val)} />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
+                                </div>
+                            </CardContent>
+                        </Card>
 
                         {/* Notes */}
                         <Card className="h-full">

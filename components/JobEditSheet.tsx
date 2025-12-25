@@ -28,6 +28,9 @@ import { VehicleSelector } from '@/components/vehicle-selector';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { createJob, checkJobOverlap } from '@/app/actions/jobActions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ResponsiveSelect } from '@/components/responsive-select';
+import { ResponsiveDatePicker } from '@/components/responsive-date-picker';
+import { Separator } from '@/components/ui/separator';
 import { AlertCircle } from 'lucide-react';
 
 type JobEditSheetProps = {
@@ -330,16 +333,17 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                         <TabsContent value="details" className="space-y-4 m-0 pb-4">
                             <div className="space-y-1">
                                 <Label>Job Status</Label>
-                                <Select value={(editState as MyJob).status || 'scheduled'} onValueChange={(value) => handleValueChange('status', value)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label>Job Status</Label>
+                                <ResponsiveSelect
+                                    value={(editState as MyJob).status || 'scheduled'}
+                                    onValueChange={(value) => handleValueChange('status', value)}
+                                    options={[
+                                        { value: 'scheduled', label: 'Scheduled' },
+                                        { value: 'completed', label: 'Completed' },
+                                        { value: 'cancelled', label: 'Cancelled' },
+                                    ]}
+                                    label="Job Status"
+                                />
                             </div>
                             <div className="space-y-1">
                                 <Label>Job Provider (Uber, Bolt, etc.)</Label>
@@ -445,36 +449,28 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             </div>
                             <div className="space-y-1">
                                 <Label>Payment Status</Label>
-                                <Select value={(editState as MyJob).paymentStatus || 'unpaid'} onValueChange={(value) => handleValueChange('paymentStatus', value)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="unpaid">Unpaid</SelectItem>
-                                        <SelectItem value="paid">Paid</SelectItem>
-                                        <SelectItem value="payment-scheduled">Payment Scheduled</SelectItem>
-                                        <SelectItem value="overdue">Overdue</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label>Payment Status</Label>
+                                <ResponsiveSelect
+                                    value={(editState as MyJob).paymentStatus || 'unpaid'}
+                                    onValueChange={(value) => handleValueChange('paymentStatus', value)}
+                                    options={[
+                                        { value: 'unpaid', label: 'Unpaid' },
+                                        { value: 'paid', label: 'Paid' },
+                                        { value: 'payment-scheduled', label: 'Payment Scheduled' },
+                                        { value: 'overdue', label: 'Overdue' },
+                                    ]}
+                                    label="Payment Status"
+                                />
                             </div>
                             {(editState as MyJob).paymentStatus === 'payment-scheduled' && (
                                 <div className="space-y-1">
                                     <Label>Payment Due Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {(editState as MyJob).paymentDueDate ? format(new Date((editState as MyJob).paymentDueDate!), 'dd/MM/yyyy') : 'Set Date'}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={(editState as MyJob).paymentDueDate ? new Date((editState as MyJob).paymentDueDate!) : undefined}
-                                                onSelect={(date) => handleValueChange('paymentDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label>Payment Due Date</Label>
+                                    <ResponsiveDatePicker
+                                        date={(editState as MyJob).paymentDueDate ? new Date((editState as MyJob).paymentDueDate!) : undefined}
+                                        setDate={(date) => handleValueChange('paymentDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                                        placeholder="Set Date"
+                                    />
                                 </div>
                             )}
                             <div className="space-y-1">
@@ -488,64 +484,70 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             <div className="space-y-1">
                                 <Label>Pickup date & time</Label>
                                 <div className="flex gap-2">
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="flex-1">
-                                                {editState.bookingDate ? (typeof editState.bookingDate === 'string' ? editState.bookingDate : format(editState.bookingDate, "dd/MM/yyyy")) : 'Set Date'}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={typeof editState.bookingDate === 'string' ? parse(editState.bookingDate, 'dd/MM/yyyy', new Date()) : editState.bookingDate as Date | undefined}
-                                                onSelect={(date) => handleValueChange('bookingDate', date ? format(date, 'dd/MM/yyyy') : '')}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <div className="flex-1">
+                                        <ResponsiveDatePicker
+                                            date={typeof editState.bookingDate === 'string' ? parse(editState.bookingDate, 'dd/MM/yyyy', new Date()) : editState.bookingDate as Date | undefined}
+                                            setDate={(date) => handleValueChange('bookingDate', date ? format(date, 'dd/MM/yyyy') : '')}
+                                            placeholder="Set Date"
+                                        />
+                                    </div>
                                     <TimePicker value={editState.bookingTime} onChange={(time) => handleValueChange('bookingTime', time)} />
                                 </div>
                             </div>
-                            <div className="space-y-2 rounded-lg border p-4">
-                                <Label className="flex items-center gap-2"><User /> Passengers</Label>
-                                <div className="flex justify-between items-center">
-                                    <p>Adults</p>
-                                    <NumberStepper value={editState.passengers?.adults || 0} onChange={(val) => handlePassengerChange('adults', val)} />
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <p>Children</p>
-                                    <NumberStepper value={editState.passengers?.children || 0} onChange={(val) => handlePassengerChange('children', val)} />
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <p>Infants</p>
-                                    <NumberStepper value={editState.passengers?.infants || 0} onChange={(val) => handlePassengerChange('infants', val)} />
-                                </div>
-                            </div>
-                            {showChildSeatSection && (
-                                <div className="space-y-2 rounded-lg border p-4">
-                                    <Label className="flex items-center gap-2"><Baby /> Child Seats</Label>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                <Label className="flex items-center gap-2 mb-2"><Briefcase className="h-4 w-4" /> Requirements</Label>
+
+                                {/* Passengers */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-primary font-semibold">Passengers</Label>
                                     <div className="flex justify-between items-center">
-                                        <p>Infant Seat (0-1yr)</p>
-                                        <NumberStepper value={editState.childSeat?.infant || 0} onChange={(val) => handleChildSeatChange('infant', val)} />
+                                        <p className="text-sm">Adults</p>
+                                        <NumberStepper value={editState.passengers?.adults || 0} onChange={(val) => handlePassengerChange('adults', val)} />
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p>Child Seat (1-4yr)</p>
-                                        <NumberStepper value={editState.childSeat?.child || 0} onChange={(val) => handleChildSeatChange('child', val)} />
+                                        <p className="text-sm">Children</p>
+                                        <NumberStepper value={editState.passengers?.children || 0} onChange={(val) => handlePassengerChange('children', val)} />
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p>Booster Seat (4yr+)</p>
-                                        <NumberStepper value={editState.childSeat?.booster || 0} onChange={(val) => handleChildSeatChange('booster', val)} />
+                                        <p className="text-sm">Infants</p>
+                                        <NumberStepper value={editState.passengers?.infants || 0} onChange={(val) => handlePassengerChange('infants', val)} />
                                     </div>
                                 </div>
-                            )}
-                            <div className="space-y-2 rounded-lg border p-4">
-                                <Label className="flex items-center gap-2"><Briefcase /> Luggage</Label>
-                                <div className="flex justify-between items-center">
-                                    <p>Cabin Bags</p>
-                                    <NumberStepper value={editState.luggage?.cabin || 0} onChange={(val) => handleLuggageChange('cabin', val)} />
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <p>Checked Bags</p>
-                                    <NumberStepper value={editState.luggage?.checked || 0} onChange={(val) => handleLuggageChange('checked', val)} />
+
+                                {showChildSeatSection && (
+                                    <>
+                                        <Separator />
+                                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                            <Label className="text-xs text-primary font-semibold">Child Seats</Label>
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm">Infant Seat <span className="text-xs text-muted-foreground">(0-1yr)</span></p>
+                                                <NumberStepper value={editState.childSeat?.infant || 0} onChange={(val) => handleChildSeatChange('infant', val)} />
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm">Child Seat <span className="text-xs text-muted-foreground">(1-4yr)</span></p>
+                                                <NumberStepper value={editState.childSeat?.child || 0} onChange={(val) => handleChildSeatChange('child', val)} />
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm">Booster Seat <span className="text-xs text-muted-foreground">(4yr+)</span></p>
+                                                <NumberStepper value={editState.childSeat?.booster || 0} onChange={(val) => handleChildSeatChange('booster', val)} />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                <Separator />
+
+                                {/* Luggage */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-primary font-semibold">Luggage</Label>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-sm">Cabin Bags</p>
+                                        <NumberStepper value={editState.luggage?.cabin || 0} onChange={(val) => handleLuggageChange('cabin', val)} />
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-sm">Checked Bags</p>
+                                        <NumberStepper value={editState.luggage?.checked || 0} onChange={(val) => handleLuggageChange('checked', val)} />
+                                    </div>
                                 </div>
                             </div>
                         </TabsContent>

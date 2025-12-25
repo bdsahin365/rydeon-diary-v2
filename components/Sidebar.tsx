@@ -30,11 +30,12 @@ const sidebarItems = [
 ];
 
 const bottomItems = [
-    { icon: ShieldCheck, label: "Claim Rydeon Pro", href: "/pro", badge: "Limited Time" },
     { icon: LifeBuoy, label: "Support", href: "/support" },
     { icon: Settings, label: "Settings", href: "/settings" },
     { icon: LogOut, label: "Log Out", href: "#" },
 ];
+
+import { JobUsageIndicator } from "@/components/JobUsageIndicator";
 
 export function SidebarContent() {
     const pathname = usePathname();
@@ -61,6 +62,7 @@ export function SidebarContent() {
             </div>
 
             <div className="space-y-2">
+                <JobUsageIndicator />
                 {bottomItems.map((item) => (
                     <Button
                         key={item.label}
@@ -71,11 +73,6 @@ export function SidebarContent() {
                         <Link href={item.href}>
                             <item.icon className="mr-2 h-5 w-5" />
                             {item.label}
-                            {item.badge && (
-                                <span className="absolute right-2 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded">
-                                    {item.badge}
-                                </span>
-                            )}
                         </Link>
                     </Button>
                 ))}

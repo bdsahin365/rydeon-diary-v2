@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button";
-import {
-    Download,
-} from "lucide-react";
+import { Download } from "lucide-react";
 import { JobCard, Job } from "@/components/JobCard";
-import { getJobs } from "@/app/actions/jobActions";
+import { getJobs, getJobCounts } from "@/app/actions/jobActions";
 import { JobFilters } from "@/components/JobFilters";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { PaymentStatusFilter } from "@/components/PaymentStatusFilter";
@@ -21,6 +19,7 @@ export default async function MyJobsPage({
     const paymentStatus = typeof resolvedSearchParams.paymentStatus === 'string' ? resolvedSearchParams.paymentStatus : undefined;
     const timeOfDay = typeof resolvedSearchParams.timeOfDay === 'string' ? resolvedSearchParams.timeOfDay : undefined;
     const jobs = await getJobs(filter, dateFrom, dateTo, paymentStatus, timeOfDay);
+    const jobCounts = await getJobCounts();
 
     return (
         <div className="space-y-6">
@@ -31,7 +30,7 @@ export default async function MyJobsPage({
                     <p className="text-sm text-muted-foreground">Your driving summary for this month</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" className="text-muted-foreground bg-card hover:bg-muted">
+                    <Button variant="outline" className="hidden sm:flex text-muted-foreground bg-card hover:bg-muted">
                         <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
@@ -41,16 +40,16 @@ export default async function MyJobsPage({
 
             {/* Tabs and Filters */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/50 pb-4">
-                <JobFilters />
+                <JobFilters counts={jobCounts} />
 
                 <div className="flex flex-row items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
                     {/* Filters Row - Scrollable on very small screens, single line */}
                     <div className="flex flex-1 gap-2 min-w-0 sm:justify-end">
                         <div className="flex-1 sm:flex-none min-w-[140px] max-w-[200px] sm:w-[160px]">
-                            <PaymentStatusFilter />
+                            <PaymentStatusFilter fullWidth />
                         </div>
                         <div className="flex-1 sm:flex-none min-w-[130px] max-w-[200px] sm:w-[160px]">
-                            <TimeOfDayFilter />
+                            <TimeOfDayFilter fullWidth />
                         </div>
                     </div>
                 </div>

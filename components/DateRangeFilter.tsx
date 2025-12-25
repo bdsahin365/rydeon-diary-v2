@@ -6,8 +6,10 @@ import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, add
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 type DateRange = {
     from: Date;
@@ -128,7 +130,15 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
         setOpen(false);
     };
 
+    const [mounted, setMounted] = React.useState(false);
+    const isMobile = useMediaQuery("(max-width: 768px)");
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const getButtonLabel = () => {
+        if (!mounted) return "Select Date Range";
         if (!dateRange) return "Select Date Range";
 
         // Check if it matches a preset
@@ -150,6 +160,124 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
         return `${format(dateRange.from, 'dd MMM')} - ${format(dateRange.to, 'dd MMM yyyy')}`;
     };
 
+    if (!mounted) {
+        return (
+            <Button
+                variant="outline"
+                className={cn(
+                    "justify-between text-muted-foreground font-normal",
+                    mobileMode ? "w-full" : "w-[240px]",
+                )}
+            >
+                {getButtonLabel()}
+                <CalendarIcon className="ml-2 h-4 w-4" />
+            </Button>
+        );
+    }
+
+
+
+    const FilterContent = ({ isMobileView = false }: { isMobileView?: boolean }) => (
+        <div className={cn("flex flex-col", !isMobileView && "sm:flex-row")}>
+            {/* Presets */}
+            <div className={cn("flex flex-col gap-1 p-3", !isMobileView && "border-b sm:border-b-0 sm:border-r")}>
+                {!isMobileView && (
+                    <div className="text-xs font-semibold text-muted-foreground mb-1 px-2">
+                        Quick Select
+                    </div>
+                )}
+                {isMobileView && <p className="text-sm font-medium mb-2 text-muted-foreground px-1">Quick Select</p>}
+
+                <div className={cn("grid gap-2", isMobileView ? "grid-cols-2" : "flex flex-col")}>
+                    {presets.map((preset) => (
+                        <Button
+                            key={preset.label}
+                            variant="outline"
+                            size={isMobileView ? "default" : "sm"}
+                            className={cn(
+                                "justify-start font-normal",
+                                isMobileView && "h-10 justify-center"
+                            )}
+                            onClick={() => handlePresetClick(preset)}
+                        >
+                            {preset.label}
+                        </Button>
+                    ))}
+                    <Button
+                        variant="ghost"
+                        size={isMobileView ? "default" : "sm"}
+                        className={cn(
+                            "justify-start font-normal text-muted-foreground",
+                            isMobileView && "h-10 justify-center col-span-2"
+                        )}
+                        onClick={clearFilter}
+                    >
+                        Clear Filter
+                    </Button>
+                </div>
+            </div>
+
+            {/* Calendar */}
+            <div className="p-3 flex justify-center flex-col items-center">
+                {isMobileView && <p className="text-sm font-medium mb-2 text-muted-foreground self-start w-full px-1">Custom Range</p>}
+                <Calendar
+                    mode="range"
+                    selected={dateRange ? { from: dateRange.from, to: dateRange.to } : undefined}
+                    onSelect={handleCustomDateSelect}
+                    numberOfMonths={1}
+                    initialFocus
+                />
+            </div>
+        </div>
+    );
+
+    if (!mounted) {
+        return (
+            <Button
+                variant="outline"
+                className={cn(
+                    "justify-between text-muted-foreground font-normal",
+                    mobileMode ? "w-full" : "w-[240px]", // Keep legacy prop support for now or just rely on styling context? User removed mobileMode usage in page.tsx effectively by reverting.
+                )}
+            >
+                {getButtonLabel()}
+                <CalendarIcon className="ml-2 h-4 w-4" />
+            </Button>
+        );
+    }
+
+    if (isMobile) {
+        return (
+            <Drawer open={open} onOpenChange={setOpen}>
+                <DrawerTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className={cn(
+                            "justify-between text-muted-foreground font-normal w-full sm:w-[240px]",
+                            dateRange && "text-foreground"
+                        )}
+                    >
+                        {getButtonLabel()}
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                    </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                    <DrawerHeader className="text-left">
+                        <DrawerTitle>Select Date Range</DrawerTitle>
+                    </DrawerHeader>
+                    <div className="p-4 pt-0 h-[80vh] overflow-y-auto">
+                        <FilterContent isMobileView={true} />
+                        <DrawerFooter className="pt-2 px-0">
+                            <DrawerClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                            </DrawerClose>
+                        </DrawerFooter>
+                    </div>
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -157,7 +285,7 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
                     variant="outline"
                     className={cn(
                         "justify-between text-muted-foreground font-normal",
-                        mobileMode ? "w-full" : "w-[240px]",
+                        "w-[240px]",
                         dateRange && "text-foreground"
                     )}
                 >
@@ -166,45 +294,7 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
-                <div className="flex">
-                    {/* Presets */}
-                    <div className="flex flex-col gap-1 p-3 border-r">
-                        <div className="text-xs font-semibold text-muted-foreground mb-1 px-2">
-                            Quick Select
-                        </div>
-                        {presets.map((preset) => (
-                            <Button
-                                key={preset.label}
-                                variant="ghost"
-                                size="sm"
-                                className="justify-start font-normal"
-                                onClick={() => handlePresetClick(preset)}
-                            >
-                                {preset.label}
-                            </Button>
-                        ))}
-                        <div className="border-t my-1" />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="justify-start font-normal text-muted-foreground"
-                            onClick={clearFilter}
-                        >
-                            Clear Filter
-                        </Button>
-                    </div>
-
-                    {/* Calendar */}
-                    <div className="p-3">
-                        <Calendar
-                            mode="range"
-                            selected={dateRange ? { from: dateRange.from, to: dateRange.to } : undefined}
-                            onSelect={handleCustomDateSelect}
-                            numberOfMonths={1}
-                            initialFocus
-                        />
-                    </div>
-                </div>
+                <FilterContent isMobileView={false} />
             </PopoverContent>
         </Popover>
     );

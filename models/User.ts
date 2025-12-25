@@ -29,6 +29,31 @@ const UserSchema = new mongoose.Schema(
             enum: ["user", "admin"],
             default: "user",
         },
+        plan: {
+            type: String,
+            enum: ["free", "pro"],
+            default: "free",
+        },
+        subscriptionStatus: {
+            type: String,
+            default: "active",
+        },
+        stripeCustomerId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        stripeSubscriptionId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        stripePriceId: {
+            type: String,
+        },
+        stripeCurrentPeriodEnd: {
+            type: Date,
+        },
     },
     { timestamps: true }
 );
