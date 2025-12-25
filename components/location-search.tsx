@@ -286,23 +286,20 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
             <PopoverTrigger asChild>
                 <div className="relative w-full max-w-full" ref={triggerRef}>
                     <Icon className="absolute left-3 top-1/2 z-10 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    <div
-                        className={cn(
-                            "flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 pl-10 pr-10 text-base shadow-xs transition-colors cursor-text min-w-0",
-                            "hover:border-ring/50 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
-                            !inputValue && "text-muted-foreground",
-                            !isLoaded && "opacity-50 cursor-not-allowed"
-                        )}
-                        onClick={() => !isLoaded ? null : setOpen(true)}
-                    >
-                        <span className="truncate block min-w-0 flex-1 whitespace-nowrap">
-                            {inputValue || placeholder || "Search for a location..."}
-                        </span>
-                    </div>
+                    <Input
+                        ref={inputRef}
+                        value={inputValue}
+                        onChange={handleInputChange}
+                        onFocus={() => setOpen(true)}
+                        placeholder={placeholder || "Search for a location..."}
+                        className="pl-10 pr-10"
+                        disabled={!isLoaded}
+                    />
                     {inputValue && (
-                        <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={(e) => {
+                        <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 z-10" onClick={(e) => {
                             e.stopPropagation();
                             setInputValue('');
+                            inputRef.current?.focus();
                         }}>
                             <X className="h-4 w-4" />
                         </Button>

@@ -95,7 +95,7 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent>
+                <DrawerContent onPointerDownOutside={(e) => e.preventDefault()}>
                     <div className="sr-only">
                         <DrawerTitle>Select Operator</DrawerTitle>
                     </div>
