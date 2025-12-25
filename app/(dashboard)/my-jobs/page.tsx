@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, ClipboardList, Plus } from "lucide-react";
+import Link from "next/link";
 import { JobCard, Job } from "@/components/JobCard";
 import { getJobs, getJobCounts } from "@/app/actions/jobActions";
 import { JobFilters } from "@/components/JobFilters";
@@ -58,8 +59,20 @@ export default async function MyJobsPage({
             {/* Jobs Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {jobs.length === 0 ? (
-                    <div className="col-span-full text-center py-10 text-muted-foreground">
-                        No jobs found. Click "Seed Data" to populate.
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-lg bg-muted/10">
+                        <div className="bg-muted p-4 rounded-full mb-4">
+                            <ClipboardList className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-1">No jobs found</h3>
+                        <p className="text-muted-foreground max-w-sm mb-6">
+                            There are no jobs to display. Try adjusting your filters or add a new job to get started.
+                        </p>
+                        <Button asChild>
+                            <Link href="/add-job">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add New Job
+                            </Link>
+                        </Button>
                     </div>
                 ) : (
                     jobs.map((job: Job) => (

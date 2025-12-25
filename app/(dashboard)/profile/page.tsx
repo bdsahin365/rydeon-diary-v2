@@ -115,13 +115,17 @@ export default function ProfilePage() {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex md:grid-cols-5 h-auto">
-                    <TabsTrigger value="overview" className="py-2">Overview</TabsTrigger>
-                    <TabsTrigger value="personal" className="py-2">Personal</TabsTrigger>
-                    <TabsTrigger value="documents" className="py-2">Documents</TabsTrigger>
-                    <TabsTrigger value="vehicles" className="py-2">Vehicles</TabsTrigger>
-                    <TabsTrigger value="security" className="py-2">Security</TabsTrigger>
-                </TabsList>
+
+                {/* Scrollable Tabs Wrapper - Matches JobFilters/Diary style */}
+                <div className="w-full overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 scrollbar-hide">
+                    <TabsList className="inline-flex h-auto p-1 bg-muted/40 border rounded-lg min-w-max">
+                        <TabsTrigger value="overview" className="px-4 py-2">Overview</TabsTrigger>
+                        <TabsTrigger value="personal" className="px-4 py-2">Personal</TabsTrigger>
+                        <TabsTrigger value="documents" className="px-4 py-2">Documents</TabsTrigger>
+                        <TabsTrigger value="vehicles" className="px-4 py-2">Vehicles</TabsTrigger>
+                        <TabsTrigger value="security" className="px-4 py-2">Security</TabsTrigger>
+                    </TabsList>
+                </div>
 
                 {/* OVERVIEW TAB */}
                 <TabsContent value="overview" className="space-y-6">
