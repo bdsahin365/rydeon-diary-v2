@@ -404,9 +404,9 @@ export default function AddJobPage() {
                                 )}
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-3 overflow-hidden min-w-0">
                                 <Label className="text-base">Route</Label>
-                                <div className="space-y-2 relative">
+                                <div className="space-y-2 relative overflow-hidden min-w-0">
                                     <div className="absolute left-[15px] top-[38px] bottom-[38px] w-[2px] bg-border -z-10" />
                                     <LocationSearch
                                         icon={CircleDot}
@@ -415,7 +415,7 @@ export default function AddJobPage() {
                                         placeholder="Pickup Location"
                                     />
                                     {jobDetails.vias?.map((via, index) => (
-                                        <div key={index} className="flex items-center gap-2 pl-8 relative">
+                                        <div key={index} className="flex items-center gap-2 pl-8 relative min-w-0">
                                             <div className="absolute left-[11px] top-1/2 -translate-y-1/2 w-3 h-[2px] bg-border" />
                                             <LocationSearch
                                                 icon={Square}
