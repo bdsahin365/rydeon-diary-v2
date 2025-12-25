@@ -59,8 +59,8 @@ It will ask you to paste the correct Price IDs.
    NEXT_PUBLIC_STRIPE_PRICE_BUSINESS=prod_TfYUR551zlJlpRc
    
    # To (with your actual Price IDs):
-   NEXT_PUBLIC_STRIPE_PRICE_PRO=price_YOUR_PRO_PRICE_ID
-   NEXT_PUBLIC_STRIPE_PRICE_BUSINESS=price_YOUR_BUSINESS_PRICE_ID
+   NEXT_PUBLIC_STRIPE_PRICE_PRO=price_1SiDL5EgDcFCzWHF9SF5T0M1
+   NEXT_PUBLIC_STRIPE_PRICE_BUSINESS=price_1SiDN3EgDcFCzWHFvgMFlI8m
    ```
 
 3. **Save the file**
