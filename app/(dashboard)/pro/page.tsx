@@ -60,7 +60,7 @@ function RydeonProContent() {
                 "Data Export",
                 "Calendar View"
             ],
-            priceId: "price_1QcVbaC...,", // REPLACE WITH REAL ID
+            priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
             isPopular: true,
             planName: "Pro"
         },
@@ -75,13 +75,24 @@ function RydeonProContent() {
                 "White labeling",
                 "Dedicated Account Manager"
             ],
-            priceId: "price_1QcVcaC...", // REPLACE WITH REAL ID
+            priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BUSINESS || "",
             planName: "Business"
         }
     ];
 
+
     const handleSubscribe = async (priceId: string, planName: string) => {
         try {
+            // Validate price ID
+            if (!priceId || priceId.trim() === "") {
+                toast({
+                    title: "Configuration Error",
+                    description: "Stripe is not configured yet. Please contact support.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
             setLoadingPriceId(priceId);
             const response = await fetch("/api/stripe/checkout", {
                 method: "POST",
@@ -90,16 +101,22 @@ function RydeonProContent() {
             });
 
             if (!response.ok) {
-                throw new Error("Failed to create checkout session");
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || "Failed to create checkout session");
             }
 
             const { url } = await response.json();
+
+            if (!url) {
+                throw new Error("No checkout URL received");
+            }
+
             window.location.href = url;
         } catch (error) {
-            console.error(error);
+            console.error("Subscription error:", error);
             toast({
                 title: "Error",
-                description: "Something went wrong. Please try again.",
+                description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
                 variant: "destructive",
             });
         } finally {

@@ -333,7 +333,6 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                         <TabsContent value="details" className="space-y-4 m-0 pb-4">
                             <div className="space-y-1">
                                 <Label>Job Status</Label>
-                                <Label>Job Status</Label>
                                 <ResponsiveSelect
                                     value={(editState as MyJob).status || 'scheduled'}
                                     onValueChange={(value) => handleValueChange('status', value)}
@@ -369,6 +368,19 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                                     handleValueChange('vehicle', vehicle);
                                 }}
                             />
+                            <div className="space-y-1">
+                                <Label>Pickup date & time</Label>
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <ResponsiveDatePicker
+                                            date={typeof editState.bookingDate === 'string' ? parse(editState.bookingDate, 'dd/MM/yyyy', new Date()) : editState.bookingDate as Date | undefined}
+                                            setDate={(date) => handleValueChange('bookingDate', date ? format(date, 'dd/MM/yyyy') : '')}
+                                            placeholder="Set Date"
+                                        />
+                                    </div>
+                                    <TimePicker value={editState.bookingTime} onChange={(time) => handleValueChange('bookingTime', time)} />
+                                </div>
+                            </div>
                             <div className="space-y-2">
                                 <Label>Locations</Label>
                                 <LocationSearch icon={CircleDot} onSelect={(val) => handleValueChange('pickup', val.formatted_address || '')} initialValue={editState.pickup} placeholder="Pickup Location" />
@@ -449,7 +461,6 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             </div>
                             <div className="space-y-1">
                                 <Label>Payment Status</Label>
-                                <Label>Payment Status</Label>
                                 <ResponsiveSelect
                                     value={(editState as MyJob).paymentStatus || 'unpaid'}
                                     onValueChange={(value) => handleValueChange('paymentStatus', value)}
@@ -465,7 +476,6 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             {(editState as MyJob).paymentStatus === 'payment-scheduled' && (
                                 <div className="space-y-1">
                                     <Label>Payment Due Date</Label>
-                                    <Label>Payment Due Date</Label>
                                     <ResponsiveDatePicker
                                         date={(editState as MyJob).paymentDueDate ? new Date((editState as MyJob).paymentDueDate!) : undefined}
                                         setDate={(date) => handleValueChange('paymentDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
@@ -480,19 +490,6 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             <div className="space-y-1">
                                 <Label>Flight Number</Label>
                                 <Input value={editState.flightNumber || ''} onChange={(e) => handleValueChange('flightNumber', e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Pickup date & time</Label>
-                                <div className="flex gap-2">
-                                    <div className="flex-1">
-                                        <ResponsiveDatePicker
-                                            date={typeof editState.bookingDate === 'string' ? parse(editState.bookingDate, 'dd/MM/yyyy', new Date()) : editState.bookingDate as Date | undefined}
-                                            setDate={(date) => handleValueChange('bookingDate', date ? format(date, 'dd/MM/yyyy') : '')}
-                                            placeholder="Set Date"
-                                        />
-                                    </div>
-                                    <TimePicker value={editState.bookingTime} onChange={(time) => handleValueChange('bookingTime', time)} />
-                                </div>
                             </div>
                             <div className="space-y-4 rounded-lg border p-4">
                                 <Label className="flex items-center gap-2 mb-2"><Briefcase className="h-4 w-4" /> Requirements</Label>
