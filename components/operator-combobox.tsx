@@ -64,30 +64,49 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
                     value={inputValue}
                     onValueChange={setInputValue}
                     autoFocus
+                    aria-label="Search for operator"
                 />
-                <CommandList>
+                <CommandList role="listbox" aria-label="Operator list">
                     <CommandEmpty>
-                        <Button
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onPointerDown={(e) => {
-                                e.preventDefault();
-                            }}
-                            onClick={() => {
-                                const newOp: Operator = { name: inputValue, chargesCommission: false, id: Math.random().toString() };
-                                onOperatorCreated(newOp);
-                                onChange(inputValue);
-                                setOpen(false);
-                            }}
-                        >
-                            <Plus className="mr-2 h-4 w-4" /> Create &quot;{inputValue}&quot;
-                        </Button>
+                        {inputValue ? (
+                            <div className="space-y-2 p-2">
+                                <p className="text-sm text-muted-foreground text-center">No operators found</p>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start min-h-[44px]"
+                                    onPointerDown={(e) => {
+                                        e.preventDefault();
+                                    }}
+                                    onClick={() => {
+                                        const newOp: Operator = { name: inputValue, chargesCommission: false, id: Math.random().toString() };
+                                        onOperatorCreated(newOp);
+                                        onChange(inputValue);
+                                        setOpen(false);
+                                    }}
+                                    aria-label={`Create new operator: ${inputValue}`}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Create &quot;{inputValue}&quot;
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                                {operators.length === 0 ? "Create your first operator" : "Start typing to search"}
+                            </div>
+                        )}
                     </CommandEmpty>
                     <CommandGroup>
+                        {operators.length > 0 && inputValue && (
+                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                {operators.filter(op => op.name.toLowerCase().includes(inputValue.toLowerCase())).length} operator(s) found
+                            </div>
+                        )}
                         {operators.map((operator) => (
                             <CommandItem
                                 key={operator.id || operator._id}
                                 value={operator.name}
+                                className="min-h-[44px]"
+                                role="option"
+                                aria-selected={value === operator.name}
                                 onPointerDown={(e) => {
                                     // Prevent input from losing focus
                                     e.preventDefault();
@@ -109,6 +128,11 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
                     </CommandGroup>
                 </CommandList>
             </Command>
+            {isMobile && (
+                <div className="px-4 pb-2 text-xs text-center text-muted-foreground">
+                    Press Escape to close
+                </div>
+            )}
         </div>
     );
 
@@ -120,6 +144,7 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
+                        aria-label="Select operator"
                         className="w-full justify-between h-10"
                     >
                         <span className="truncate text-left">
@@ -149,6 +174,7 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
+                    aria-label="Select operator"
                     className="w-full justify-between"
                     suppressHydrationWarning
                 >

@@ -166,26 +166,48 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
         }
     }, [open]);
 
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Escape') {
+            setOpen(false);
+            e.currentTarget.blur();
+        } else if (e.key === 'Enter' && suggestions.length > 0) {
+            e.preventDefault();
+            handleSelect(suggestions[0]);
+        }
+    }, [suggestions, handleSelect]);
+
     const isMobile = useMediaQuery("(max-width: 768px)");
 
     // Suggestions List Component
     const SuggestionsList = ({ isMobileDrawer = false }: { isMobileDrawer?: boolean }) => (
-        <div className="flex flex-col space-y-1 p-2 w-full">
+        <div
+            className="flex flex-col space-y-1 p-2 w-full"
+            role="listbox"
+            aria-label="Location suggestions"
+        >
             {isLoading && (
-                <div className="flex items-center justify-center p-4">
+                <div className="flex items-center justify-center p-4" role="status" aria-live="polite">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <span className="sr-only">Loading location suggestions...</span>
                 </div>
             )}
-            {!isLoading && suggestions.length === 0 && String(debouncedValue).length > 2 && (
+            {!isLoading && debouncedValue && debouncedValue.length < 2 && (
                 <div className="p-4 text-center text-sm text-muted-foreground">
+                    Enter at least 2 characters to search
+                </div>
+            )}
+            {!isLoading && suggestions.length === 0 && String(debouncedValue).length >= 2 && (
+                <div className="p-4 text-center text-sm text-muted-foreground" role="status">
                     No results found.
                 </div>
             )}
-            {!isLoading && suggestions.map((suggestion) => (
+            {!isLoading && suggestions.map((suggestion, index) => (
                 <Button
                     key={suggestion.place_id}
                     variant="ghost"
-                    className="h-auto justify-start gap-2 w-full px-2 py-3"
+                    className="h-auto justify-start gap-2 w-full px-2 py-3 min-h-[44px]"
+                    role="option"
+                    aria-selected={index === 0}
                     onPointerDown={(e) => {
                         // Prevent input from losing focus on mobile
                         if (isMobileDrawer) {
@@ -252,9 +274,11 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                                 ref={inputRef}
                                 value={inputValue}
                                 onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
                                 placeholder={placeholder || "Search for a location..."}
                                 className="pl-10 h-12 text-base truncate overflow-hidden text-ellipsis"
                                 autoFocus
+                                aria-label={placeholder || "Search for a location"}
                             />
                             {inputValue && (
                                 <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setInputValue('')}>
@@ -296,10 +320,12 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                         ref={inputRef}
                         value={inputValue}
                         onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
                         onFocus={() => setOpen(true)}
                         placeholder={placeholder || "Search for a location..."}
                         className="pl-10 pr-10"
                         disabled={!isLoaded}
+                        aria-label={placeholder || "Search for a location"}
                     />
                     {inputValue && (
                         <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 z-10" onClick={(e) => {

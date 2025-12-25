@@ -47,34 +47,42 @@ export function ResponsiveSelect({
         return (
             <Drawer open={open} onOpenChange={setOpen}>
                 <DrawerTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between font-normal bg-background">
+                    <Button
+                        variant="outline"
+                        className="w-full justify-between font-normal bg-background min-h-[48px]"
+                        aria-label={label || "Select option"}
+                        aria-expanded={open}
+                    >
                         <span className="truncate text-left">
                             {value ? options.find(opt => opt.value === value)?.label : <span className="text-muted-foreground">{placeholder}</span>}
                         </span>
                         <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent>
+                <DrawerContent className="transition-transform duration-300 ease-in-out">
                     <div className="p-4 pb-8 space-y-4">
                         <DrawerTitle className={cn("text-lg font-semibold text-center", !label && "sr-only")}>
                             {label || "Select Option"}
                         </DrawerTitle>
-                        <div className="flex flex-col space-y-2">
+                        <div className="flex flex-col space-y-2" role="radiogroup" aria-label={label || "Options"}>
                             {options.map((option) => (
                                 <Button
                                     key={option.value}
-                                    variant={value === option.value ? "secondary" : "ghost"}
+                                    variant={value === option.value ? "default" : "ghost"}
                                     className={cn(
-                                        "w-full justify-between h-12 text-base font-normal",
-                                        value === option.value && "font-medium"
+                                        "w-full justify-between h-12 min-h-[48px] text-base font-normal transition-all",
+                                        value === option.value && "font-medium shadow-sm"
                                     )}
                                     onClick={() => {
                                         onValueChange(option.value)
                                         setOpen(false)
                                     }}
+                                    role="radio"
+                                    aria-checked={value === option.value}
+                                    aria-label={option.label}
                                 >
                                     {option.label}
-                                    {value === option.value && <Check className="h-4 w-4" />}
+                                    {value === option.value && <Check className="h-5 w-5" />}
                                 </Button>
                             ))}
                         </div>
