@@ -18,7 +18,7 @@ export async function getJobUsage() {
         // Fetch user to get current plan
         const user = await User.findById(session.user.id);
         const plan = user?.plan || 'free';
-        const limit = plan === 'pro' ? Infinity : 100;
+        const limit = (plan === 'pro' || plan === 'business') ? Infinity : 100;
 
         const count = await Job.countDocuments({ userId: session.user.id });
 

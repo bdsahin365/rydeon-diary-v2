@@ -7,11 +7,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { getSubscription, type UserPlan } from "@/actions/get-subscription";
 
 import { Suspense } from "react";
 
 function RydeonProContent() {
     const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
+    const [currentPlan, setCurrentPlan] = useState<UserPlan | null>(null);
+    const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -23,6 +26,8 @@ function RydeonProContent() {
                 description: "You have successfully subscribed to Rydeon Pro!",
                 className: "bg-green-100",
             });
+            // Refresh subscription data
+            fetchSubscription();
         }
         if (searchParams.get("canceled")) {
             toast({
@@ -32,6 +37,22 @@ function RydeonProContent() {
             });
         }
     }, [searchParams, toast]);
+
+    useEffect(() => {
+        fetchSubscription();
+    }, []);
+
+    const fetchSubscription = async () => {
+        try {
+            const subscription = await getSubscription();
+            setCurrentPlan(subscription?.plan || 'free');
+        } catch (error) {
+            console.error("Error fetching subscription:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // Replace these with your actual Stripe Price IDs from your Dashboard
     const PLANS = [
@@ -124,25 +145,42 @@ function RydeonProContent() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 pb-12">
             <PageHeader title="Rydeon Pro" subtitle="Choose the plan that fits your needs" />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {PLANS.map((plan) => (
-                    <PricingCard
-                        key={plan.title}
-                        title={plan.title}
-                        price={plan.price}
-                        description={plan.description}
-                        features={plan.features}
-                        isPopular={plan.isPopular}
-                        buttonText={plan.buttonText || (plan.priceId ? "Upgrade" : "Get Started")}
-                        disabled={plan.disabled}
-                        isLoading={loadingPriceId === plan.priceId}
-                        onButtonClick={() => plan.priceId && handleSubscribe(plan.priceId, plan.planName!)}
-                    />
-                ))}
+                {PLANS.map((plan) => {
+                    const planKey = plan.title.toLowerCase() as UserPlan;
+                    const isCurrentPlan = currentPlan === planKey;
+
+                    return (
+                        <PricingCard
+                            key={plan.title}
+                            title={plan.title}
+                            price={plan.price}
+                            description={plan.description}
+                            features={plan.features}
+                            isPopular={plan.isPopular && !isCurrentPlan}
+                            buttonText={
+                                isCurrentPlan
+                                    ? "Current Plan"
+                                    : plan.buttonText || (plan.priceId ? "Upgrade" : "Get Started")
+                            }
+                            disabled={plan.disabled || isCurrentPlan}
+                            isLoading={loadingPriceId === plan.priceId}
+                            onButtonClick={() => plan.priceId && handleSubscribe(plan.priceId, plan.planName!)}
+                        />
+                    );
+                })}
             </div>
 
             <div className="rounded-lg bg-muted p-6 text-center">

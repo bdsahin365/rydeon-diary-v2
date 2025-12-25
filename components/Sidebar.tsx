@@ -36,6 +36,7 @@ const bottomItems = [
 ];
 
 import { JobUsageIndicator } from "@/components/JobUsageIndicator";
+import { PlanBadge } from "@/components/PlanBadge";
 
 export function SidebarContent() {
     const pathname = usePathname();
@@ -62,6 +63,7 @@ export function SidebarContent() {
             </div>
 
             <div className="space-y-2">
+                <PlanBadge />
                 <JobUsageIndicator />
                 {bottomItems.map((item) => (
                     <Button
