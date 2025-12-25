@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const sidebarItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
     { icon: Search, label: "Find Jobs", href: "/find-jobs" },
 
     { icon: Briefcase, label: "My Jobs", href: "/my-jobs" },

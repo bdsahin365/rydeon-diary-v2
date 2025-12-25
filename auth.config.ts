@@ -24,9 +24,17 @@ export const authConfig = {
             const isLoggedIn = !!auth?.user;
             const isOnAuth = nextUrl.pathname.startsWith("/login") || nextUrl.pathname.startsWith("/signup");
             const isPublic = nextUrl.pathname.startsWith("/api") || nextUrl.pathname.startsWith("/_next") || nextUrl.pathname.includes(".");
+            const isLanding = nextUrl.pathname === "/";
+            const isDashboard = nextUrl.pathname === "/dashboard";
 
             if (isOnAuth) {
-                if (isLoggedIn) return Response.redirect(new URL("/", nextUrl));
+                if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
+                return true;
+            }
+
+            if (isLanding) {
+                // Optional: Redirect logged in users to dashboard
+                if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
                 return true;
             }
 

@@ -7,7 +7,6 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 const formSchema = z.object({
@@ -64,61 +63,59 @@ export default function SignupForm() {
     }
 
     return (
-        <Card className="w-full max-w-md mx-auto">
-            <CardHeader>
-                <CardTitle>Sign Up</CardTitle>
-                <CardDescription>Create a new account to get started</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-2">
-                        <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Name</label>
-                        <Input
-                            id="name"
-                            placeholder="John Doe"
-                            {...form.register("name")}
-                        />
-                        {form.formState.errors.name && (
-                            <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
-                        )}
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email</label>
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="m@example.com"
-                            {...form.register("email")}
-                        />
-                        {form.formState.errors.email && (
-                            <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-                        )}
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Password</label>
-                        <Input
-                            id="password"
-                            type="password"
-                            {...form.register("password")}
-                        />
-                        {form.formState.errors.password && (
-                            <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
-                        )}
-                    </div>
-                    {error && <p className="text-sm text-red-500">{error}</p>}
-                    <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Creating account..." : "Sign Up"}
-                    </Button>
-                </form>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-                <p className="text-sm text-muted-foreground">
-                    Already have an account?{" "}
-                    <Link href="/login" className="text-primary hover:underline">
-                        Login
-                    </Link>
+        <div className="mx-auto grid w-[350px] gap-6">
+            <div className="grid gap-2 text-center">
+                <h1 className="text-3xl font-bold">Sign Up</h1>
+                <p className="text-balance text-muted-foreground">
+                    Enter your information to create an account
                 </p>
-            </CardFooter>
-        </Card>
+            </div>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                <div className="grid gap-2">
+                    <label htmlFor="name">Name</label>
+                    <Input
+                        id="name"
+                        placeholder="John Doe"
+                        {...form.register("name")}
+                    />
+                    {form.formState.errors.name && (
+                        <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                    )}
+                </div>
+                <div className="grid gap-2">
+                    <label htmlFor="email">Email</label>
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="m@example.com"
+                        {...form.register("email")}
+                    />
+                    {form.formState.errors.email && (
+                        <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                    )}
+                </div>
+                <div className="grid gap-2">
+                    <label htmlFor="password">Password</label>
+                    <Input
+                        id="password"
+                        type="password"
+                        {...form.register("password")}
+                    />
+                    {form.formState.errors.password && (
+                        <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+                    )}
+                </div>
+                {error && <p className="text-sm text-red-500">{error}</p>}
+                <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Creating account..." : "Create an account"}
+                </Button>
+            </form>
+            <div className="mt-4 text-center text-sm">
+                Already have an account?{" "}
+                <Link href="/login" className="underline">
+                    Sign in
+                </Link>
+            </div>
+        </div>
     );
 }

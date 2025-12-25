@@ -8,7 +8,6 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 const formSchema = z.object({
@@ -47,7 +46,7 @@ export default function LoginForm() {
             if (result?.error) {
                 setError("Invalid email or password");
             } else {
-                router.push("/");
+                router.push("/dashboard");
                 router.refresh();
             }
         } catch (error) {
@@ -58,50 +57,56 @@ export default function LoginForm() {
     }
 
     return (
-        <Card className="w-full max-w-md mx-auto">
-            <CardHeader>
-                <CardTitle>Login</CardTitle>
-                <CardDescription>Enter your credentials to access your account</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email</label>
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="m@example.com"
-                            {...form.register("email")}
-                        />
-                        {form.formState.errors.email && (
-                            <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-                        )}
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Password</label>
-                        <Input
-                            id="password"
-                            type="password"
-                            {...form.register("password")}
-                        />
-                        {form.formState.errors.password && (
-                            <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
-                        )}
-                    </div>
-                    {error && <p className="text-sm text-red-500">{error}</p>}
-                    <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Logging in..." : "Login"}
-                    </Button>
-                </form>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-                <p className="text-sm text-muted-foreground">
-                    Don't have an account?{" "}
-                    <Link href="/signup" className="text-primary hover:underline">
-                        Sign up
-                    </Link>
+        <div className="mx-auto grid w-[350px] gap-6">
+            <div className="grid gap-2 text-center">
+                <h1 className="text-3xl font-bold">Login</h1>
+                <p className="text-balance text-muted-foreground">
+                    Enter your email below to login to your account
                 </p>
-            </CardFooter>
-        </Card>
+            </div>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                <div className="grid gap-2">
+                    <label htmlFor="email">Email</label>
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="m@example.com"
+                        {...form.register("email")}
+                    />
+                    {form.formState.errors.email && (
+                        <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                    )}
+                </div>
+                <div className="grid gap-2">
+                    <div className="flex items-center">
+                        <label htmlFor="password">Password</label>
+                        <Link
+                            href="/forgot-password"
+                            className="ml-auto inline-block text-sm underline"
+                        >
+                            Forgot your password?
+                        </Link>
+                    </div>
+                    <Input
+                        id="password"
+                        type="password"
+                        {...form.register("password")}
+                    />
+                    {form.formState.errors.password && (
+                        <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+                    )}
+                </div>
+                {error && <p className="text-sm text-red-500">{error}</p>}
+                <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Logging in..." : "Login"}
+                </Button>
+            </form>
+            <div className="mt-4 text-center text-sm">
+                Don&apos;t have an account?{" "}
+                <Link href="/signup" className="underline">
+                    Sign up
+                </Link>
+            </div>
+        </div>
     );
 }

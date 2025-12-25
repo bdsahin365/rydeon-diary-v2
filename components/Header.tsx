@@ -10,9 +10,12 @@ import { SidebarContent } from "@/components/Sidebar";
 import { useSession } from "next-auth/react";
 import { UserMenu } from "@/components/auth/UserMenu";
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export function Header() {
     const { data: session } = useSession();
+    const pathname = usePathname();
 
     return (
         <header className="h-16 bg-background border-b flex items-center justify-between px-4 lg:px-6 shrink-0">
@@ -29,42 +32,42 @@ export function Header() {
                     </SheetContent>
                 </Sheet>
 
-                <div className="font-bold text-lg flex items-center">
-                    {/* Logo Icon */}
-                    <span className="mr-2 hidden sm:block">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        </svg>
-                    </span>
-                    Rydeon Diary
-                </div>
+                <Link href="/" className="font-bold text-lg flex items-center">
+                    <Image src="/rydeon-logo.svg" alt="RydeOn" width={120} height={40} className="mr-2 hidden sm:block" />
+                </Link>
             </div>
 
             <div className="flex items-center space-x-2 lg:space-x-4">
-                <Button asChild className="hidden sm:flex">
-                    <Link href="/add-job">
-                        <Plus className="mr-2 h-4 w-4" /> Add Job
-                    </Link>
-                </Button>
-                <Button asChild size="icon" className="sm:hidden rounded-full">
-                    <Link href="/add-job">
-                        <Plus className="h-4 w-4" />
-                    </Link>
-                </Button>
+                {!pathname.startsWith("/") || pathname === "/dashboard" ? (
+                    <>
+                        <Button asChild className="hidden sm:flex">
+                            <Link href="/add-job">
+                                <Plus className="mr-2 h-4 w-4" /> Add Job
+                            </Link>
+                        </Button>
+                        <Button asChild size="icon" className="sm:hidden rounded-full">
+                            <Link href="/add-job">
+                                <Plus className="h-4 w-4" />
+                            </Link>
+                        </Button>
 
-                <div className="relative hidden md:block w-64">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search..." className="pl-8 bg-muted border-none" />
-                </div>
+                        <div className="relative hidden md:block w-64">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search..." className="pl-8 bg-muted border-none" />
+                        </div>
+                    </>
+                ) : null}
 
                 <ModeToggle />
 
-                <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5 text-muted-foreground" />
-                    <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
-                        5
-                    </span>
-                </Button>
+                {(!pathname.startsWith("/") || pathname === "/dashboard") ? (
+                    <Button variant="ghost" size="icon" className="relative">
+                        <Bell className="h-5 w-5 text-muted-foreground" />
+                        <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
+                            5
+                        </span>
+                    </Button>
+                ) : null}
 
                 {session?.user ? (
                     <UserMenu user={session.user} />
