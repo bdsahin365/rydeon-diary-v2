@@ -39,6 +39,7 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
     const [open, setOpen] = useState(false);
     const [debouncedValue, setDebouncedValue] = useState(inputValue);
     const triggerRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Common UK airports by IATA code
@@ -225,8 +226,6 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
     }
 
     if (isMobile) {
-        const inputRef = useRef<HTMLInputElement>(null);
-
         return (
             <Drawer open={open} onOpenChange={setOpen}>
                 <DrawerTrigger asChild>
