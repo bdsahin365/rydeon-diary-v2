@@ -66,13 +66,13 @@ export async function POST(req: Request) {
         if (event.type === "invoice.payment_succeeded") {
             const invoice = event.data.object as Stripe.Invoice;
 
-            if (!invoice.subscription) {
+            if (!(invoice as any).subscription) {
                 console.log("[STRIPE_WEBHOOK] No subscription in invoice");
                 return new NextResponse(null, { status: 200 });
             }
 
             const subscription = await stripe.subscriptions.retrieve(
-                invoice.subscription as string
+                (invoice as any).subscription as string
             ) as Stripe.Subscription;
 
             await dbConnect();
