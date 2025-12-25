@@ -232,10 +232,10 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                     <div className="relative w-full max-w-full overflow-hidden">
                         <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                         <div className={cn(
-                            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 pr-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 items-center overflow-hidden",
+                            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 pr-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 items-center overflow-hidden min-w-0",
                             !inputValue && "text-muted-foreground"
                         )}>
-                            <span className="block truncate w-full text-left">
+                            <span className="block truncate min-w-0 flex-1">
                                 {inputValue || placeholder || "Search for a location..."}
                             </span>
                         </div>
@@ -288,14 +288,14 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                     <Icon className="absolute left-3 top-1/2 z-10 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <div
                         className={cn(
-                            "flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 pl-10 pr-10 text-base shadow-xs transition-colors cursor-text",
+                            "flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 pl-10 pr-10 text-base shadow-xs transition-colors cursor-text min-w-0",
                             "hover:border-ring/50 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
                             !inputValue && "text-muted-foreground",
                             !isLoaded && "opacity-50 cursor-not-allowed"
                         )}
                         onClick={() => !isLoaded ? null : setOpen(true)}
                     >
-                        <span className="truncate block w-full">
+                        <span className="truncate block min-w-0 flex-1">
                             {inputValue || placeholder || "Search for a location..."}
                         </span>
                     </div>
