@@ -168,7 +168,7 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
     const isMobile = useMediaQuery("(max-width: 768px)");
 
     // Suggestions List Component
-    const SuggestionsList = () => (
+    const SuggestionsList = ({ isMobileDrawer = false }: { isMobileDrawer?: boolean }) => (
         <div className="flex flex-col space-y-1 p-2 w-full">
             {isLoading && (
                 <div className="flex items-center justify-center p-4">
@@ -185,7 +185,14 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                     key={suggestion.place_id}
                     variant="ghost"
                     className="h-auto justify-start gap-2 w-full px-2 py-3"
-                    onClick={() => handleSelect(suggestion)}
+                    onPointerDown={(e) => {
+                        // Prevent input from losing focus on mobile
+                        if (isMobileDrawer) {
+                            e.preventDefault();
+                        }
+                        handleSelect(suggestion);
+                    }}
+                    type="button"
                 >
                     <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
                     <div className="text-left w-full overflow-hidden">
@@ -254,7 +261,7 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                             )}
                         </div>
                         <div className="overflow-y-auto max-h-[60vh]">
-                            <SuggestionsList />
+                            <SuggestionsList isMobileDrawer={true} />
                         </div>
                     </div>
                 </DrawerContent>

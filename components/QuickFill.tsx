@@ -53,22 +53,22 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                         <Plus className="w-4 h-4 text-muted-foreground" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent className="max-h-[85vh]">
-                    <DrawerHeader className="text-left flex-shrink-0">
+                <DrawerContent>
+                    <DrawerHeader className="text-left">
                         <DrawerTitle className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-primary" /> Auto-Fill Job Details
                         </DrawerTitle>
                     </DrawerHeader>
-                    <div className="p-4 pt-0 flex flex-col gap-3 flex-1 overflow-hidden">
+                    <div className="p-4 pt-0 space-y-3 max-h-[calc(85vh-80px)] flex flex-col">
                         <Textarea
                             placeholder="Paste job details here (e.g. from WhatsApp/Email)..."
                             value={pastedMessage}
                             onChange={(e) => setPastedMessage(e.target.value)}
-                            className="resize-none text-base min-h-[120px] max-h-[200px] overflow-y-auto flex-shrink-0"
+                            className="resize-none text-base min-h-[120px] max-h-[40vh] overflow-y-auto"
                             autoFocus
                             suppressHydrationWarning
                         />
-                        <div className="flex-shrink-0 space-y-3">
+                        <div className="space-y-3 mt-auto">
                             <Button
                                 className="w-full"
                                 onClick={handleParse}
