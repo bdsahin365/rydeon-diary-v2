@@ -72,32 +72,33 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                         <Plus className="w-4 h-4 text-muted-foreground" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent>
-                    <DrawerHeader className="text-left">
+                <DrawerContent className="max-h-[90vh] flex flex-col fixed bottom-0 left-0 right-0">
+                    <DrawerHeader className="text-left flex-none">
                         <DrawerTitle className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-primary" /> Auto-Fill Job Details
                         </DrawerTitle>
                     </DrawerHeader>
-                    <div className="p-4 pt-0 space-y-3 flex flex-col">
+
+                    <div className="p-4 pt-0 flex-1 overflow-y-auto">
                         <Tabs defaultValue="text" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 mb-4">
                                 <TabsTrigger value="text">Message Text</TabsTrigger>
                                 <TabsTrigger value="image">Screenshot</TabsTrigger>
                             </TabsList>
 
-                            <TabsContent value="text" className="data-[state=active]:flex-1 flex flex-col">
+                            <TabsContent value="text" className="data-[state=active]:flex flex-col">
                                 <Textarea
                                     placeholder="Paste job details here..."
                                     value={pastedMessage}
                                     onChange={(e) => setPastedMessage(e.target.value)}
-                                    className="resize-none text-base min-h-[150px] flex-1 overflow-y-auto"
+                                    className="resize-none text-base min-h-[150px] overflow-y-auto"
                                     autoFocus
                                     suppressHydrationWarning
                                 />
                             </TabsContent>
 
-                            <TabsContent value="image" className="data-[state=active]:flex-1 flex flex-col">
-                                <div className="space-y-4 flex-1">
+                            <TabsContent value="image" className="data-[state=active]:flex flex-col">
+                                <div className="space-y-4">
                                     {!selectedImage ? (
                                         <div
                                             className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-4 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer h-[200px]"
@@ -113,7 +114,7 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                                         </div>
                                     ) : (
                                         <div className="relative rounded-md overflow-hidden border">
-                                            <img src={selectedImage} alt="Preview" className="w-full max-h-[300px] object-contain bg-black/5" />
+                                            <img src={selectedImage} alt="Preview" className="w-full object-contain bg-black/5 max-h-[40vh]" />
                                             <Button
                                                 variant="destructive"
                                                 size="icon"
@@ -135,8 +136,10 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                                 </div>
                             </TabsContent>
                         </Tabs>
+                    </div>
 
-                        <div className="space-y-3 mt-auto pt-2">
+                    <div className="p-4 pt-2 border-t mt-auto flex-none bg-background pb-8 md:pb-4">
+                        <div className="space-y-3">
                             <Button
                                 className="w-full h-11 text-base"
                                 onClick={handleParse}
