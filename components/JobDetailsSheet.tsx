@@ -337,7 +337,30 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
 
                                 <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
                                     <InfoLine icon={Car} label="Vehicle" value={getVehicleLabel(job)} />
-                                    <InfoLine icon={Plane} label="Flight Number" value={job.flightNumber} />
+                                    <InfoLine
+                                        icon={Plane}
+                                        label="Flight Number"
+                                        value={
+                                            job.flightNumber ? (
+                                                <span className="inline-flex items-center gap-2">
+                                                    {job.flightNumber}
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className="h-6 px-2 text-xs hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                                                        onClick={() => {
+                                                            const flightId = job.flightNumber?.replace(/\s+/g, '');
+                                                            if (flightId) {
+                                                                window.open(`https://www.flightaware.com/live/flight/${flightId}`, '_blank');
+                                                            }
+                                                        }}
+                                                    >
+                                                        Track Flight
+                                                    </Button>
+                                                </span>
+                                            ) : null
+                                        }
+                                    />
                                     <InfoLine icon={MessageSquare} label="Notes" value={job.notes || null} />
                                     <InfoLine icon={Calendar} label="Job Reference" value={(job as any).jobRef || null} />
                                     <InfoLine

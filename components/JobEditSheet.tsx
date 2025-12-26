@@ -489,7 +489,33 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             </div>
                             <div className="space-y-1">
                                 <Label>Flight Number</Label>
-                                <Input value={editState.flightNumber || ''} onChange={(e) => handleValueChange('flightNumber', e.target.value)} />
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1">
+                                        <Plane className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            value={editState.flightNumber || ''}
+                                            onChange={(e) => handleValueChange('flightNumber', e.target.value)}
+                                            className="pl-9"
+                                            placeholder="e.g. BA1492"
+                                        />
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-10 w-10 shrink-0"
+                                        disabled={!editState.flightNumber}
+                                        onClick={() => {
+                                            if (editState.flightNumber) {
+                                                const flightId = editState.flightNumber.replace(/\s+/g, '');
+                                                window.open(`https://www.flightaware.com/live/flight/${flightId}`, '_blank');
+                                            }
+                                        }}
+                                        title="Track on FlightAware"
+                                    >
+                                        <Plane className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                             <div className="space-y-4 rounded-lg border p-4">
                                 <Label className="flex items-center gap-2 mb-2"><Briefcase className="h-4 w-4" /> Requirements</Label>

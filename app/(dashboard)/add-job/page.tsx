@@ -625,9 +625,26 @@ export default function AddJobPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-xs text-muted-foreground">Flight Number</Label>
-                                    <div className="relative">
-                                        <Plane className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input className="pl-9" value={jobDetails.flightNumber || ''} onChange={(e) => handleValueChange('flightNumber', e.target.value)} placeholder="e.g. BA123" />
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <Plane className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input className="pl-9" value={jobDetails.flightNumber || ''} onChange={(e) => handleValueChange('flightNumber', e.target.value)} placeholder="e.g. BA123" />
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-10 w-10 shrink-0"
+                                            disabled={!jobDetails.flightNumber}
+                                            onClick={() => {
+                                                if (jobDetails.flightNumber) {
+                                                    const flightId = jobDetails.flightNumber.replace(/\s+/g, '');
+                                                    window.open(`https://www.flightaware.com/live/flight/${flightId}`, '_blank');
+                                                }
+                                            }}
+                                            title="Track on FlightAware"
+                                        >
+                                            <Plane className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
