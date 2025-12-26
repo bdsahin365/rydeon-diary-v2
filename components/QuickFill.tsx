@@ -18,6 +18,7 @@ import {
     DrawerFooter,
     DrawerClose,
 } from "@/components/ui/drawer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
@@ -25,16 +26,34 @@ import { cn } from "@/lib/utils";
 interface QuickFillProps {
     pastedMessage: string;
     setPastedMessage: (message: string) => void;
-    onParse: () => void;
+    onParse: (message?: string, image?: string | null) => Promise<void>;
     isParsing: boolean;
 }
 
 export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing }: QuickFillProps) {
     const isMobile = useMediaQuery("(max-width: 768px)");
+    const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
     const [open, setOpen] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const handleParse = () => {
-        onParse();
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSelectedImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const clearImage = () => {
+        setSelectedImage(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleParse = async () => {
+        await onParse(pastedMessage, selectedImage);
         setOpen(false);
     };
 
@@ -48,7 +67,7 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                     >
                         <span className="flex items-center gap-2 text-muted-foreground font-medium">
                             <Sparkles className="w-4 h-4 text-primary" />
-                            Quick Fill from Message
+                            Quick Fill from Message/Image
                         </span>
                         <Plus className="w-4 h-4 text-muted-foreground" />
                     </Button>
@@ -59,26 +78,75 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
                             <Sparkles className="w-4 h-4 text-primary" /> Auto-Fill Job Details
                         </DrawerTitle>
                     </DrawerHeader>
-                    <div className="p-4 pt-0 space-y-3 flex flex-col h-[calc(85vh-80px)]">
-                        <Textarea
-                            placeholder="Paste job details here (e.g. from WhatsApp/Email)..."
-                            value={pastedMessage}
-                            onChange={(e) => setPastedMessage(e.target.value)}
-                            className="resize-none text-base min-h-[100px] flex-1 overflow-y-auto"
-                            autoFocus
-                            suppressHydrationWarning
-                        />
-                        <div className="space-y-3 mt-auto">
+                    <div className="p-4 pt-0 space-y-3 flex flex-col">
+                        <Tabs defaultValue="text" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 mb-4">
+                                <TabsTrigger value="text">Message Text</TabsTrigger>
+                                <TabsTrigger value="image">Screenshot</TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="text" className="data-[state=active]:flex-1 flex flex-col">
+                                <Textarea
+                                    placeholder="Paste job details here..."
+                                    value={pastedMessage}
+                                    onChange={(e) => setPastedMessage(e.target.value)}
+                                    className="resize-none text-base min-h-[150px] flex-1 overflow-y-auto"
+                                    autoFocus
+                                    suppressHydrationWarning
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="image" className="data-[state=active]:flex-1 flex flex-col">
+                                <div className="space-y-4 flex-1">
+                                    {!selectedImage ? (
+                                        <div
+                                            className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-4 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer h-[200px]"
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            <div className="rounded-full bg-primary/10 p-4">
+                                                <Sparkles className="w-6 h-6 text-primary" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-medium">Tap to upload</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Supports PNG, JPG</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="relative rounded-md overflow-hidden border">
+                                            <img src={selectedImage} alt="Preview" className="w-full max-h-[300px] object-contain bg-black/5" />
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute top-2 right-2 h-8 w-8 shadow-sm"
+                                                onClick={clearImage}
+                                            >
+                                                <Plus className="h-4 w-4 rotate-45" />
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        ref={fileInputRef}
+                                        onChange={handleImageUpload}
+                                    />
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+
+                        <div className="space-y-3 mt-auto pt-2">
                             <Button
-                                className="w-full"
+                                className="w-full h-11 text-base"
                                 onClick={handleParse}
-                                disabled={isParsing || !pastedMessage}
+                                disabled={isParsing || (!pastedMessage && !selectedImage)}
                             >
-                                {isParsing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                {isParsing ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <Sparkles className="mr-2 h-5 w-5" />}
                                 Process & Fill Form
                             </Button>
                             <DrawerClose asChild>
-                                <Button variant="outline" className="w-full">Cancel</Button>
+                                <Button variant="outline" className="w-full h-11">Cancel</Button>
                             </DrawerClose>
                         </div>
                     </div>
@@ -96,23 +164,48 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
             </CardHeader>
             <CardContent className="space-y-3">
                 <Textarea
-                    placeholder="Paste job details here (e.g. from WhatsApp/Email)..."
+                    placeholder="Paste job details here or upload a screenshot..."
                     value={pastedMessage}
                     onChange={(e) => setPastedMessage(e.target.value)}
                     rows={2}
                     className="resize-none text-sm min-h-[80px]"
                     suppressHydrationWarning
                 />
-                <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={onParse}
-                    disabled={isParsing || !pastedMessage}
-                    className="w-full sm:w-auto"
-                >
-                    {isParsing ? <Loader2 className="animate-spin mr-2 h-3 w-3" /> : <Sparkles className="mr-2 h-3 w-3" />}
-                    Auto-Fill Form
-                </Button>
+                {selectedImage && (
+                    <div className="relative rounded-md overflow-hidden border w-full">
+                        <img src={selectedImage} alt="Preview" className="w-full max-h-[200px] object-contain bg-muted/20" />
+                        <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={clearImage}
+                        >
+                            <Plus className="h-4 w-4 rotate-45" />
+                        </Button>
+                    </div>
+                )}
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => fileInputRef.current?.click()}>
+                        Upload Screenshot
+                    </Button>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                    />
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => onParse(pastedMessage, selectedImage)}
+                        disabled={isParsing || (!pastedMessage && !selectedImage)}
+                        className="flex-1 sm:w-auto"
+                    >
+                        {isParsing ? <Loader2 className="animate-spin mr-2 h-3 w-3" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                        Auto-Fill Form
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     );

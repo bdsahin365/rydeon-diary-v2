@@ -6,8 +6,8 @@ export const useSettings = () => {
         fuelPrice: 1.50, // £ per litre
         fuelEfficiency: 45, // mpg
         maintenanceCost: 0.15, // £ per mile
-        operatorFee: 20, // %
-        airportFee: 5, // £
+        operatorFee: 0, // %
+        airportFee: 7, // £
         targetProfit: 1.00, // £ per mile
     });
 

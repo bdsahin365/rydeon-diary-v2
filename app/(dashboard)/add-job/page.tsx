@@ -41,7 +41,7 @@ const EMPTY_JOB: Partial<MyJob> = {
     fare: 0,
     operator: '',
     operatorFee: 0,
-    airportFee: 0,
+    airportFee: 7,
     includeAirportFee: false,
     customerName: '',
     customerPhone: '',
@@ -124,7 +124,7 @@ export default function AddJobPage() {
                         };
                         const isAirport = isAirportJob(newState as ProcessedJob);
                         newState.includeAirportFee = isAirport;
-                        newState.airportFee = isAirport ? settings.airportFee : 0;
+                        newState.airportFee = settings.airportFee;
                         return newState;
                     });
                 } catch (e) {
@@ -135,11 +135,15 @@ export default function AddJobPage() {
         }
     }, [jobDetails.pickup, jobDetails.dropoff, settings.airportFee]);
 
-    const handleParseMessage = async () => {
-        if (!pastedMessage) return;
+    const handleParseMessage = async (message?: string, image?: string | null) => {
+        const contentToParse = message || pastedMessage;
+        if (!contentToParse && !image) return;
         setIsParsing(true);
         try {
-            const { jobs } = await parseProviderMessage({ messageContent: pastedMessage });
+            const { jobs } = await parseProviderMessage({
+                messageContent: contentToParse || '',
+                imageBase64: image || undefined
+            });
             if (jobs && jobs.length > 0) {
                 const parsed = jobs[0];
                 const operator = existingOperators.find(op => op && op.name && op.name.toLowerCase() === parsed.operator?.toLowerCase());
@@ -221,7 +225,7 @@ export default function AddJobPage() {
         const totalFuelCost = (distance / settings.fuelEfficiency) * fuelPricePerGallon;
         const totalMaintenanceCost = distance * settings.maintenanceCost;
 
-        const airportFee = jobDetails.airportFee ?? 0;
+        const airportFee = jobDetails.includeAirportFee ? (jobDetails.airportFee ?? 0) : 0;
 
         const totalTripCost = totalFuelCost + totalMaintenanceCost + airportFee + operatorFeeAmount;
 
@@ -502,7 +506,7 @@ export default function AddJobPage() {
                                             <Checkbox id="includeAirportFee" checked={jobDetails.includeAirportFee} onCheckedChange={(checked) => {
                                                 handleValueChange('includeAirportFee', checked as boolean);
                                                 if (checked) handleValueChange('airportFee', settings.airportFee);
-                                                else handleValueChange('airportFee', 0);
+                                                // Retain value when unchecked so it doesn't clear the input
                                             }} />
                                             <Input type="number" disabled={!jobDetails.includeAirportFee} value={jobDetails.airportFee || ''} onChange={(e) => handleValueChange('airportFee', parseFloat(e.target.value))} />
                                         </div>
