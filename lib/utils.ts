@@ -14,6 +14,15 @@ export const parsePrice = (priceStr: string | number | undefined): number => {
   return match ? parseFloat(match[0]) : 0;
 };
 
+export const formatPrice = (price: number): string => {
+  return price.toLocaleString('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export const parseJobDate = (dateStr: string | Date): Date | undefined => {
   if (dateStr instanceof Date) return dateStr;
   if (!dateStr) return undefined;

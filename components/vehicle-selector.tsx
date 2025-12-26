@@ -24,7 +24,7 @@ interface VehicleSelectorProps {
     value: string | null;
     onChange: (value: string) => void;
     onVehicleAdded: (vehicle: string, operator: Operator) => void;
-    availableVehicles: string[];
+    availableVehicles?: string[];
 }
 
 export function VehicleSelector({ operator: _operator, value, onChange, onVehicleAdded, availableVehicles = [] }: VehicleSelectorProps) {
