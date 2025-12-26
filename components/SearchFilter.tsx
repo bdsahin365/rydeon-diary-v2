@@ -12,7 +12,8 @@ interface SearchFilterProps {
     externalExpanded?: boolean;
 }
 
-export function SearchFilter({ onExpandChange, externalExpanded }: SearchFilterProps = {}) {
+
+export function SearchFilter({ onExpandChange, externalExpanded, fullWidthMobile }: SearchFilterProps & { fullWidthMobile?: boolean } = {}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [value, setValue] = React.useState(searchParams.get("search") || "");
@@ -71,17 +72,20 @@ export function SearchFilter({ onExpandChange, externalExpanded }: SearchFilterP
     return (
         <div className={cn(
             "flex items-center transition-all duration-300 ease-in-out",
-            isExpanded ? "w-full sm:w-[250px]" : "w-9"
+            isExpanded ? "w-full sm:w-[250px]" : (fullWidthMobile ? "w-full sm:w-9" : "w-9")
         )}>
             {!isExpanded ? (
                 <Button
                     variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+                    className={cn(
+                        "shrink-0 text-muted-foreground hover:text-foreground",
+                        fullWidthMobile ? "w-full justify-start px-3 sm:w-9 sm:px-0 sm:justify-center" : "h-9 w-9 p-0"
+                    )}
                     onClick={() => handleExpandChange(true)}
                 >
-                    <Search className="h-4 w-4" />
-                    <span className="sr-only">Search</span>
+                    <Search className={cn("h-4 w-4", fullWidthMobile && "mr-2 sm:mr-0")} />
+                    <span className={cn(fullWidthMobile ? "inline sm:hidden" : "sr-only")}>Search...</span>
+                    {!fullWidthMobile && <span className="sr-only">Search</span>}
                 </Button>
             ) : (
                 <div className="relative w-full flex items-center">

@@ -49,6 +49,29 @@ export function OperatorFilter({ operators, fullWidth }: OperatorFilterProps) {
     };
 
     const isMobile = useMediaQuery("(max-width: 768px)");
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return (
+            <Button
+                variant="outline"
+                className={cn(
+                    "justify-between text-muted-foreground font-normal px-3 h-9",
+                    fullWidth ? "w-full" : "w-[140px]",
+                    selectedOperator && "text-foreground bg-accent/50 border-accent-foreground/50",
+                )}
+            >
+                <span className="truncate mr-2 max-w-[100px]">
+                    {getButtonLabel()}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
+            </Button>
+        );
+    }
 
     const FilterContent = ({ isMobileView = false }: { isMobileView?: boolean }) => {
         if (isMobileView) {

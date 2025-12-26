@@ -56,6 +56,36 @@ export function TimeOfDayFilter({ fullWidth }: TimeOfDayFilterProps = {}) {
     };
 
     const isMobile = useMediaQuery("(max-width: 768px)");
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return (
+            <Button
+                variant="outline"
+                className={cn(
+                    "justify-between text-muted-foreground font-normal px-3 h-9",
+                    fullWidth ? "w-full" : "w-[120px]",
+                    selectedTime && "text-foreground bg-accent/50 border-accent-foreground/50",
+                )}
+            >
+                <span className="truncate mr-2 flex items-center gap-2">
+                    {selectedTime ? (
+                        <>
+                            {React.createElement(timeOfDayOptions.find(t => t.value === selectedTime)?.icon || Sun, { className: "h-3.5 w-3.5" })}
+                            {getButtonLabel()}
+                        </>
+                    ) : (
+                        "Time"
+                    )}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
+            </Button>
+        );
+    }
 
     const FilterContent = ({ isMobileView = false }: { isMobileView?: boolean }) => {
         if (isMobileView) {
