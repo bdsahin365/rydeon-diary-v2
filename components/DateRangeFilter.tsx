@@ -261,17 +261,17 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
                         <CalendarIcon className="ml-2 h-4 w-4" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent>
-                    <DrawerHeader className="text-left">
+                <DrawerContent className="max-h-[90vh] flex flex-col fixed bottom-0 left-0 right-0">
+                    <DrawerHeader className="text-left flex-none">
                         <DrawerTitle>Select Date Range</DrawerTitle>
                     </DrawerHeader>
-                    <div className="p-4 pt-0 h-[80vh] overflow-y-auto">
+                    <div className="p-4 pt-0 flex-1 overflow-y-auto">
                         <FilterContent isMobileView={true} />
-                        <DrawerFooter className="pt-2 px-0">
-                            <DrawerClose asChild>
-                                <Button variant="outline">Cancel</Button>
-                            </DrawerClose>
-                        </DrawerFooter>
+                    </div>
+                    <div className="p-4 pt-2 border-t mt-auto flex-none bg-background pb-8 md:pb-4">
+                        <DrawerClose asChild>
+                            <Button variant="outline" className="w-full">Cancel</Button>
+                        </DrawerClose>
                     </div>
                 </DrawerContent>
             </Drawer>

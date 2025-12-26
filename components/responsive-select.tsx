@@ -59,18 +59,18 @@ export function ResponsiveSelect({
                         <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent className="transition-transform duration-300 ease-in-out">
-                    <div className="p-4 pb-8 space-y-4">
-                        <DrawerTitle className={cn("text-lg font-semibold text-center", !label && "sr-only")}>
+                <DrawerContent className="transition-transform duration-300 ease-in-out max-h-[90vh] flex flex-col fixed bottom-0 left-0 right-0">
+                    <div className="p-4 pb-8 space-y-4 flex flex-col flex-1 overflow-y-auto">
+                        <DrawerTitle className={cn("text-lg font-semibold text-center flex-none", !label && "sr-only")}>
                             {label || "Select Option"}
                         </DrawerTitle>
-                        <div className="flex flex-col space-y-2" role="radiogroup" aria-label={label || "Options"}>
+                        <div className="flex flex-col space-y-2 flex-1 overflow-y-auto" role="radiogroup" aria-label={label || "Options"}>
                             {options.map((option) => (
                                 <Button
                                     key={option.value}
                                     variant={value === option.value ? "default" : "ghost"}
                                     className={cn(
-                                        "w-full justify-between h-12 min-h-[48px] text-base font-normal transition-all",
+                                        "w-full justify-between h-12 min-h-[48px] text-base font-normal transition-all flex-shrink-0",
                                         value === option.value && "font-medium shadow-sm"
                                     )}
                                     onClick={() => {

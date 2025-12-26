@@ -155,11 +155,11 @@ export function OperatorCombobox({ operators, value, onChange, onOperatorCreated
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent onPointerDownOutside={(e) => e.preventDefault()}>
+                <DrawerContent onPointerDownOutside={(e) => e.preventDefault()} className="max-h-[90vh] flex flex-col fixed bottom-0 left-0 right-0">
                     <div className="sr-only">
                         <DrawerTitle>Select Operator</DrawerTitle>
                     </div>
-                    <div className="mt-4 border-t">
+                    <div className="mt-4 border-t flex-1 overflow-y-auto min-h-[50vh]">
                         <OperatorList />
                     </div>
                 </DrawerContent>

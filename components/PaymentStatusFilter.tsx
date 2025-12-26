@@ -144,17 +144,17 @@ export function PaymentStatusFilter({ fullWidth }: PaymentStatusFilterProps = {}
                         <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
                     </Button>
                 </DrawerTrigger>
-                <DrawerContent>
-                    <DrawerHeader>
+                <DrawerContent className="max-h-[90vh] flex flex-col fixed bottom-0 left-0 right-0">
+                    <DrawerHeader className="flex-none">
                         <DrawerTitle>Select Payment Status</DrawerTitle>
                     </DrawerHeader>
-                    <div className="p-4 pb-0">
+                    <div className="p-4 pb-0 flex-1 overflow-y-auto">
                         <FilterContent isMobileView={true} />
-                        <DrawerFooter>
-                            <DrawerClose asChild>
-                                <Button variant="outline">Cancel</Button>
-                            </DrawerClose>
-                        </DrawerFooter>
+                    </div>
+                    <div className="p-4 pt-2 border-t mt-auto flex-none bg-background pb-8 md:pb-4">
+                        <DrawerClose asChild>
+                            <Button variant="outline" className="w-full">Cancel</Button>
+                        </DrawerClose>
                     </div>
                 </DrawerContent>
             </Drawer>

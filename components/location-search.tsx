@@ -263,12 +263,12 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                         </div>
                     </div>
                 </DrawerTrigger>
-                <DrawerContent className="h-[80vh]">
+                <DrawerContent className="max-h-[85vh] flex flex-col fixed bottom-0 left-0 right-0">
                     <div className="sr-only">
                         <DrawerTitle>Search Location</DrawerTitle>
                     </div>
-                    <div className="p-4 space-y-4">
-                        <div className="relative">
+                    <div className="p-4 space-y-4 flex flex-col flex-1 overflow-hidden">
+                        <div className="relative flex-none">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 ref={inputRef}
@@ -287,7 +287,7 @@ export function LocationSearch({ onSelect, initialValue, placeholder, icon: Icon
                             )}
                         </div>
                         <div
-                            className="overflow-y-auto max-h-[60vh]"
+                            className="overflow-y-auto flex-1"
                             onMouseDown={(e) => {
                                 // Only prevent default if NOT clicking on a button
                                 const target = e.target as HTMLElement;
