@@ -3,8 +3,9 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, X } from "lucide-react"
+import { Plus, X, Car, Check } from "lucide-react"
 import { Operator } from "@/types"
+import { cn } from "@/lib/utils"
 
 interface VehicleSelectorProps {
     operator: Operator | null;
@@ -14,120 +15,136 @@ interface VehicleSelectorProps {
 }
 
 export function VehicleSelector({ operator: _operator, value, onChange }: VehicleSelectorProps) {
+    const [isAdding, setIsAdding] = React.useState(false);
     const [customVehicle, setCustomVehicle] = React.useState("");
     const [error, setError] = React.useState("");
     const standardVehicles = ["Saloon", "Estate", "MPV", "MPV+6", "MPV+8", "Exec"];
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        if (isAdding && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isAdding]);
 
     const handleAddCustom = () => {
         const trimmed = customVehicle.trim();
 
         if (!trimmed) {
-            setError("Vehicle name cannot be empty");
+            setError("Name cannot be empty");
             return;
         }
 
         if (trimmed.length < 2) {
-            setError("Vehicle name must be at least 2 characters");
+            setError("Min 2 chars");
             return;
         }
 
         if (trimmed.length > 20) {
-            setError("Vehicle name must be 20 characters or less");
+            setError("Max 20 chars");
             return;
         }
 
         onChange(trimmed);
         setCustomVehicle("");
         setError("");
+        setIsAdding(false);
     };
 
-    const handleClear = () => {
-        onChange("");
-        setCustomVehicle("");
-        setError("");
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddCustom();
+        } else if (e.key === 'Escape') {
+            setIsAdding(false);
+            setCustomVehicle("");
+            setError("");
+        }
     };
 
     return (
         <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-                {standardVehicles.map((v) => (
-                    <Button
-                        key={v}
-                        variant={value === v ? "default" : "outline"}
-                        onClick={() => onChange(v)}
-                        className="h-10 min-h-[44px]"
-                        type="button"
-                        aria-pressed={value === v}
-                        aria-label={`Select ${v} vehicle`}
-                    >
-                        <span className="mr-2">🚗</span>
-                        {v}
-                    </Button>
-                ))}
+            <div className="grid grid-cols-3 gap-3">
+                {standardVehicles.map((v) => {
+                    const isSelected = value === v;
+                    return (
+                        <Button
+                            key={v}
+                            variant={isSelected ? "default" : "outline"}
+                            onClick={() => onChange(v)}
+                            className={cn(
+                                "h-14 flex flex-col gap-1 items-center justify-center transition-all duration-200",
+                                isSelected
+                                    ? "border-primary bg-primary/10 text-primary hover:bg-primary/20 shadow-sm"
+                                    : "hover:border-primary/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                            )}
+                            type="button"
+                        >
+                            <Car className={cn("w-5 h-5 transition-colors", isSelected ? "text-primary fill-primary/20" : "text-rose-500 fill-rose-500/20")} />
+                            <span className="text-xs font-medium leading-none">{v}</span>
+                        </Button>
+                    );
+                })}
+
+                {/* Custom Vehicle Display if selected and not standard */}
                 {value && !standardVehicles.includes(value) && (
                     <Button
                         variant="default"
-                        className="h-10 min-h-[44px]"
+                        className="h-14 flex flex-col gap-1 items-center justify-center border-primary bg-primary/10 text-primary hover:bg-primary/20 shadow-sm transition-all duration-200"
                         type="button"
-                        aria-pressed={true}
-                        aria-label={`Current selection: ${value}`}
+                        onClick={() => { }} // Already selected
                     >
-                        <span className="mr-2">🚙</span>
-                        {value}
+                        <Car className="w-5 h-5 text-primary fill-primary/20" />
+                        <span className="text-xs font-medium leading-none truncate max-w-full px-1">{value}</span>
                     </Button>
                 )}
-            </div>
-            <div className="space-y-2">
-                <div className="flex gap-2">
-                    <div className="flex-1">
-                        <label htmlFor="custom-vehicle" className="sr-only">Custom vehicle type</label>
+
+                {/* Add Custom Button / Input */}
+                {isAdding ? (
+                    <div className="col-span-1 md:col-span-1 h-14 relative group">
                         <Input
-                            id="custom-vehicle"
-                            placeholder="Add custom vehicle..."
+                            ref={inputRef}
                             value={customVehicle}
                             onChange={(e) => {
                                 setCustomVehicle(e.target.value);
                                 setError("");
                             }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleAddCustom();
-                                }
-                            }}
-                            aria-invalid={!!error}
-                            aria-describedby={error ? "vehicle-error" : undefined}
-                            className={error ? "border-red-500" : ""}
+                            onKeyDown={handleKeyDown}
+                            onBlur={() => !customVehicle && setIsAdding(false)}
+                            className={cn(
+                                "h-full w-full px-2 text-xs text-center border-dashed border-2 focus-visible:ring-1 focus-visible:ring-offset-0",
+                                error ? "border-red-500 focus-visible:ring-red-500" : "border-muted-foreground/30 focus-visible:border-primary"
+                            )}
+                            placeholder="Type..."
                         />
+                        {customVehicle && (
+                            <div className="absolute -top-2 -right-2">
+                                <Button
+                                    size="icon"
+                                    className="h-5 w-5 rounded-full shadow-sm"
+                                    onClick={handleAddCustom}
+                                    type="button"
+                                >
+                                    <Check className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        )}
+                        {error && (
+                            <span className="absolute -bottom-5 left-0 right-0 text-[10px] text-red-500 text-center bg-background/90 px-1 rounded border border-red-200 z-10 pointer-events-none whitespace-nowrap overflow-hidden text-ellipsis">
+                                {error}
+                            </span>
+                        )}
                     </div>
+                ) : (
                     <Button
                         variant="outline"
-                        size="icon"
-                        onClick={handleAddCustom}
+                        className="h-14 flex flex-col gap-1 items-center justify-center border-dashed border-2 border-muted hover:border-primary/50 hover:bg-muted/50 text-muted-foreground transition-all duration-200"
+                        onClick={() => setIsAdding(true)}
                         type="button"
-                        disabled={!customVehicle.trim()}
-                        className="min-w-[44px] min-h-[44px]"
-                        aria-label="Add custom vehicle"
                     >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="w-5 h-5" />
+                        <span className="text-xs font-medium leading-none">Custom</span>
                     </Button>
-                    {value && (
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={handleClear}
-                            type="button"
-                            className="min-w-[44px] min-h-[44px]"
-                            aria-label="Clear vehicle selection"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-                {error && (
-                    <p id="vehicle-error" className="text-xs text-red-500" role="alert">
-                        {error}
-                    </p>
                 )}
             </div>
         </div>

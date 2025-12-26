@@ -390,22 +390,18 @@ export default function AddJobPage() {
                                         }
                                     }}
                                 />
-                                {jobDetails.operator && (
-                                    <div className="pt-2 animate-in fade-in zoom-in-95">
-                                        <VehicleSelector
-                                            operator={selectedOperator}
-                                            value={jobDetails.vehicle || null}
-                                            onChange={(val) => handleValueChange('vehicle', val)}
-                                            onVehicleAdded={(vehicle, updatedOperator) => {
-                                                setExistingOperators(prev =>
-                                                    prev.map(op => op.id === updatedOperator.id ? updatedOperator : op)
-                                                );
-                                                setSelectedOperator(updatedOperator);
-                                                handleValueChange('vehicle', vehicle);
-                                            }}
-                                        />
-                                    </div>
-                                )}
+                                <div className="pt-2 animate-in fade-in zoom-in-95">
+                                    <VehicleSelector
+                                        operator={selectedOperator}
+                                        value={jobDetails.vehicle || null}
+                                        onChange={(val) => handleValueChange('vehicle', val)}
+                                        onVehicleAdded={(vehicle, updatedOperator) => {
+                                            setExistingOperators(prev =>
+                                                prev.map(op => op._id === updatedOperator._id ? updatedOperator : op)
+                                            );
+                                        }}
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-3 overflow-hidden min-w-0">

@@ -156,54 +156,81 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
     }
 
     return (
-        <Card className="border-dashed border-2 shadow-none bg-muted/10">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium flex items-center gap-2 text-muted-foreground">
-                    <Sparkles className="w-4 h-4 text-primary" /> Quick Fill
+        <Card className="border-none shadow-sm bg-muted/20">
+            <CardHeader className="pb-3 pt-4 px-4">
+                <CardTitle className="text-base font-medium flex items-center justify-between gap-2 text-foreground/80">
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span>Quick Fill</span>
+                    </div>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-                <Textarea
-                    placeholder="Paste job details here or upload a screenshot..."
-                    value={pastedMessage}
-                    onChange={(e) => setPastedMessage(e.target.value)}
-                    rows={2}
-                    className="resize-none text-sm min-h-[80px]"
-                    suppressHydrationWarning
-                />
-                {selectedImage && (
-                    <div className="relative rounded-md overflow-hidden border w-full">
-                        <img src={selectedImage} alt="Preview" className="w-full max-h-[200px] object-contain bg-muted/20" />
-                        <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={clearImage}
-                        >
-                            <Plus className="h-4 w-4 rotate-45" />
-                        </Button>
-                    </div>
-                )}
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => fileInputRef.current?.click()}>
-                        Upload Screenshot
-                    </Button>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                    />
+            <CardContent className="px-4 pb-4">
+                <Tabs defaultValue="text" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="text">Message Text</TabsTrigger>
+                        <TabsTrigger value="image">Screenshot</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="text" className="mt-0">
+                        <Textarea
+                            placeholder="Paste job details here from text messages..."
+                            value={pastedMessage}
+                            onChange={(e) => setPastedMessage(e.target.value)}
+                            rows={4}
+                            className="resize-none min-h-[100px]"
+                            suppressHydrationWarning
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="image" className="mt-0">
+                        {!selectedImage ? (
+                            <div
+                                className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 bg-background hover:bg-muted/50 transition-colors cursor-pointer min-h-[100px]"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <div className="rounded-full bg-primary/10 p-2">
+                                    <Sparkles className="w-5 h-5 text-primary" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-medium">Click to upload screenshot</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Supports PNG, JPG</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="relative rounded-md overflow-hidden border bg-background group">
+                                <img src={selectedImage} alt="Preview" className="w-full h-[150px] object-contain bg-black/5" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="h-8 w-8 shadow-sm"
+                                        onClick={clearImage}
+                                    >
+                                        <Plus className="h-4 w-4 rotate-45" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                        />
+                    </TabsContent>
+                </Tabs>
+
+                <div className="mt-4 flex justify-end">
                     <Button
-                        size="sm"
-                        variant="secondary"
+                        size="default"
+                        className="w-full"
                         onClick={() => onParse(pastedMessage, selectedImage)}
                         disabled={isParsing || (!pastedMessage && !selectedImage)}
-                        className="flex-1 sm:w-auto"
                     >
-                        {isParsing ? <Loader2 className="animate-spin mr-2 h-3 w-3" /> : <Sparkles className="mr-2 h-3 w-3" />}
-                        Auto-Fill Form
+                        {isParsing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Process & Fill Form
                     </Button>
                 </div>
             </CardContent>
