@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { VehicleSelector } from '@/components/vehicle-selector';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { createJob, checkJobOverlap } from '@/app/actions/jobActions';
+import { createVehicleType, getVehicleTypes } from '@/app/actions/vehicleTypeActions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ResponsiveSelect } from '@/components/responsive-select';
 import { ResponsiveDatePicker } from '@/components/responsive-date-picker';
@@ -77,6 +78,7 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
     const [open, setOpen] = useState(false);
     const [editState, setEditState] = useState<Partial<ProcessedJob>>({});
     const [existingOperators, setExistingOperators] = useState<Operator[]>([]);
+    const [vehicleTypes, setVehicleTypes] = useState<string[]>([]);
     const { settings } = useSettings();
     const [tripInfo, setTripInfo] = useState({ distance: job?.distance || '', duration: job?.duration || '' });
     const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
@@ -96,7 +98,17 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                 console.error('Failed to fetch operators:', error);
             }
         };
+
+        const fetchVehicleTypes = async () => {
+            const result = await getVehicleTypes();
+            if (result.success && result.data) {
+                // Type assertion or map because data is IVehicleType[]
+                setVehicleTypes(result.data.map((vt: any) => vt.name));
+            }
+        };
+
         fetchOperators();
+        fetchVehicleTypes();
     }, []);
 
     useEffect(() => {
@@ -359,14 +371,27 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             <VehicleSelector
                                 operator={selectedOperator}
                                 value={editState.vehicle || null}
-                                onChange={(val) => handleValueChange('vehicle', val)}
-                                onVehicleAdded={(vehicle, updatedOperator) => {
-                                    setExistingOperators(prev =>
-                                        prev.map(op => op.id === updatedOperator.id ? updatedOperator : op)
-                                    );
-                                    setSelectedOperator(updatedOperator);
-                                    handleValueChange('vehicle', vehicle);
+                                onChange={async (val) => {
+                                    handleValueChange('vehicle', val);
+                                    // Check if it's a new type and add it if so
+                                    if (val && !vehicleTypes.includes(val)) {
+                                        // Optimistically add
+                                        setVehicleTypes(prev => [...prev, val]);
+                                        // Persist
+                                        await createVehicleType(val);
+                                    }
                                 }}
+                                onVehicleAdded={(vehicle, updatedOperator) => {
+                                    // This prop was for specific vehicle ASSETS on an operator.
+                                    // We are keeping it for backward compatibility if we revert logic, but for now
+                                    // we just redirect to general handling.
+                                    // Ideally, we should clean up the VehicleSelector signature, but I kept it for minimal breakage.
+                                    // Since my new VehicleSelector calls onChange for everything, this might not be called anymore
+                                    // unless we kept the "Add Custom" logic separate. 
+                                    // But I refactored VehicleSelector to just use onChange.
+                                    // The type check TS error was about missing 'availableVehicles', so we add it now.
+                                }}
+                                availableVehicles={vehicleTypes}
                             />
                             <div className="space-y-1">
                                 <Label>Pickup date & time</Label>

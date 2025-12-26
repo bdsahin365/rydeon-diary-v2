@@ -1,0 +1,49 @@
+Found 4 sets of duplicates:
+
+Duplicate Set #1:
+Criteria: {
+  "bookingDate": "26/12/2025",
+  "bookingTime": "15:25",
+  "pickup": "London Stansted Airport",
+  "dropoff": "26 Gloucester Road, London E10 7HS, UK, London",
+  "customerName": "Coutaud Audrey"
+}
+Job Details:
+  - ID: 694ec7391f1cda19d9123366 | Ref: undefined | Status: scheduled | CreatedAt: Fri Dec 26 2025 17:34:49 GMT+0000 (Greenwich Mean Time)
+  - ID: 694ed1c76eabe421a3cd540b | Ref: undefined | Status: scheduled | CreatedAt: Fri Dec 26 2025 18:19:51 GMT+0000 (Greenwich Mean Time)
+
+Duplicate Set #2:
+Criteria: {
+  "bookingDate": "28/07/2025",
+  "bookingTime": "10:00",
+  "pickup": "Heathrow Terminal 5",
+  "dropoff": "Central London",
+  "customerName": "Jane Smith"
+}
+Job Details:
+  - ID: 694abb0ccba30d978116b389 | Ref: undefined | Status: completed | CreatedAt: Tue Dec 23 2025 15:53:48 GMT+0000 (Greenwich Mean Time)
+  - ID: 694ac7a95e6c9dd18c98ed5b | Ref: undefined | Status: completed | CreatedAt: Tue Dec 23 2025 16:47:37 GMT+0000 (Greenwich Mean Time)
+
+Duplicate Set #3:
+Criteria: {
+  "bookingDate": "29/07/2025",
+  "bookingTime": "16:30",
+  "pickup": "London Standsted Airport",
+  "dropoff": "Norfolk Towers Paddington",
+  "customerName": "John Doe"
+}
+Job Details:
+  - ID: 694abb0ccba30d978116b388 | Ref: undefined | Status: scheduled | CreatedAt: Tue Dec 23 2025 15:53:48 GMT+0000 (Greenwich Mean Time)
+  - ID: 694ac7a95e6c9dd18c98ed5a | Ref: undefined | Status: scheduled | CreatedAt: Tue Dec 23 2025 16:47:37 GMT+0000 (Greenwich Mean Time)
+
+Duplicate Set #4:
+Criteria: {
+  "bookingDate": "10/09/2025",
+  "bookingTime": "08:30",
+  "pickup": "10 NEW DRUM STREET LONDON E1 7AT",
+  "dropoff": "EXCEL 1 WESTERN GATEWAY LONDON E16 1XL",
+  "customerName": "ANGELICA PARTON"
+}
+Job Details:
+  - ID: 694abb0ccba30d978116b387 | Ref: undefined | Status: completed | CreatedAt: Tue Dec 23 2025 15:53:48 GMT+0000 (Greenwich Mean Time)
+  - ID: 694ac7a95e6c9dd18c98ed59 | Ref: undefined | Status: completed | CreatedAt: Tue Dec 23 2025 16:47:37 GMT+0000 (Greenwich Mean Time)
