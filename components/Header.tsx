@@ -1,7 +1,9 @@
 "use client";
 
 import { Search, Bell, Plus, Menu } from "lucide-react";
-import { ModeToggle } from "@/components/mode-toggle";
+import dynamic from 'next/dynamic';
+
+const ModeToggle = dynamic(() => import('@/components/mode-toggle').then(mod => mod.ModeToggle), { ssr: false });
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
