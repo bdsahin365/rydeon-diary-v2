@@ -64,9 +64,11 @@ const presets: PresetOption[] = [
 
 interface DateRangeFilterProps {
     mobileMode?: boolean;
+    className?: string;
+    compact?: boolean;
 }
 
-export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
+export function DateRangeFilter({ mobileMode, className, compact }: DateRangeFilterProps = {}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [open, setOpen] = React.useState(false);
@@ -235,13 +237,15 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
         return (
             <Button
                 variant="outline"
+                size={compact ? "icon" : "default"}
                 className={cn(
                     "justify-between text-muted-foreground font-normal",
-                    mobileMode ? "w-full" : "w-[240px]", // Keep legacy prop support for now or just rely on styling context? User removed mobileMode usage in page.tsx effectively by reverting.
+                    mobileMode ? "w-full" : (compact ? "w-9 px-0" : "w-[240px]"),
+                    className
                 )}
             >
-                {getButtonLabel()}
-                <CalendarIcon className="ml-2 h-4 w-4" />
+                {!compact && getButtonLabel()}
+                <CalendarIcon className={cn("h-4 w-4", !compact && "ml-2")} />
             </Button>
         );
     }
@@ -252,13 +256,16 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
                 <DrawerTrigger asChild>
                     <Button
                         variant="outline"
+                        size={compact ? "icon" : "default"}
                         className={cn(
-                            "justify-between text-muted-foreground font-normal w-full sm:w-[240px]",
-                            dateRange && "text-foreground"
+                            "justify-between text-muted-foreground font-normal sm:w-[240px]",
+                            dateRange && "text-foreground",
+                            compact ? "w-9 px-0 justify-center" : "w-full",
+                            className
                         )}
                     >
-                        {getButtonLabel()}
-                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {!compact && getButtonLabel()}
+                        <CalendarIcon className={cn("h-4 w-4", !compact && "ml-2")} />
                     </Button>
                 </DrawerTrigger>
                 <DrawerContent className="max-h-[90vh] flex flex-col fixed bottom-0 left-0 right-0">
@@ -283,14 +290,16 @@ export function DateRangeFilter({ mobileMode }: DateRangeFilterProps = {}) {
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
+                    size={compact ? "icon" : "default"}
                     className={cn(
                         "justify-between text-muted-foreground font-normal",
-                        "w-[240px]",
-                        dateRange && "text-foreground"
+                        compact ? "w-9 px-0 justify-center" : "w-[240px]",
+                        dateRange && "text-foreground",
+                        className
                     )}
                 >
-                    {getButtonLabel()}
-                    <CalendarIcon className="ml-2 h-4 w-4" />
+                    {!compact && getButtonLabel()}
+                    <CalendarIcon className={cn("h-4 w-4", !compact && "ml-2")} />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">

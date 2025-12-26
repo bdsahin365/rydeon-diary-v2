@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Download, ClipboardList, Plus } from "lucide-react";
 import Link from "next/link";
 import { JobCard, Job } from "@/components/JobCard";
-import { getJobs, getJobCounts } from "@/app/actions/jobActions";
+import { JobHeaderActions } from "@/components/JobHeaderActions";
+import { OperatorFilter } from "@/components/OperatorFilter";
+import { getJobs, getJobCounts, getUniqueOperators } from "@/app/actions/jobActions";
 import { JobFilters } from "@/components/JobFilters";
-import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { PaymentStatusFilter } from "@/components/PaymentStatusFilter";
 import { TimeOfDayFilter } from "@/components/TimeOfDayFilter";
 
@@ -19,8 +20,12 @@ export default async function MyJobsPage({
     const dateTo = typeof resolvedSearchParams.dateTo === 'string' ? resolvedSearchParams.dateTo : undefined;
     const paymentStatus = typeof resolvedSearchParams.paymentStatus === 'string' ? resolvedSearchParams.paymentStatus : undefined;
     const timeOfDay = typeof resolvedSearchParams.timeOfDay === 'string' ? resolvedSearchParams.timeOfDay : undefined;
-    const jobs = await getJobs(filter, dateFrom, dateTo, paymentStatus, timeOfDay);
+    const searchQuery = typeof resolvedSearchParams.search === 'string' ? resolvedSearchParams.search : undefined;
+    const operator = typeof resolvedSearchParams.operator === 'string' ? resolvedSearchParams.operator : undefined;
+
+    const jobs = await getJobs(filter, dateFrom, dateTo, paymentStatus, timeOfDay, searchQuery, operator);
     const jobCounts = await getJobCounts();
+    const uniqueOperators = await getUniqueOperators();
 
     return (
         <div className="space-y-6">
@@ -30,13 +35,7 @@ export default async function MyJobsPage({
                     <h1 className="text-2xl font-bold text-foreground">My Jobs</h1>
                     <p className="text-sm text-muted-foreground">Your driving summary for this month</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" className="hidden sm:flex text-muted-foreground bg-card hover:bg-muted">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
-                    </Button>
-                    <DateRangeFilter />
-                </div>
+                <JobHeaderActions />
             </div>
 
             {/* Tabs and Filters */}
@@ -46,6 +45,9 @@ export default async function MyJobsPage({
                 <div className="flex flex-row items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
                     {/* Filters Row - Scrollable on very small screens, single line */}
                     <div className="flex flex-1 gap-2 min-w-0 sm:justify-end">
+                        <div className="flex-1 sm:flex-none min-w-[140px] max-w-[200px] sm:w-[160px]">
+                            <OperatorFilter operators={uniqueOperators} fullWidth />
+                        </div>
                         <div className="flex-1 sm:flex-none min-w-[140px] max-w-[200px] sm:w-[160px]">
                             <PaymentStatusFilter fullWidth />
                         </div>

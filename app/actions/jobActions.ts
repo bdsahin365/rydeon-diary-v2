@@ -7,7 +7,15 @@ import { auth } from "@/auth";
 import { parse, isWithinInterval, isValid } from "date-fns";
 import { categorizeTimeOfDay } from "@/lib/time-utils";
 
-export async function getJobs(filter?: string, dateFrom?: string, dateTo?: string, paymentStatus?: string, timeOfDay?: string) {
+export async function getJobs(
+    filter?: string,
+    dateFrom?: string,
+    dateTo?: string,
+    paymentStatus?: string,
+    timeOfDay?: string,
+    searchQuery?: string,
+    operator?: string
+) {
     const session = await auth();
     if (!session?.user?.id) {
         return [];
@@ -25,9 +33,9 @@ export async function getJobs(filter?: string, dateFrom?: string, dateTo?: strin
         // Fetch all matching jobs first
         let jobs;
         if (filter === 'scheduled') {
-            jobs = await Job.find(query).sort({ bookingDate: 1, bookingTime: 1 });
+            jobs = await Job.find(query).sort({ bookingDate: 1, bookingTime: 1 }).lean();
         } else {
-            jobs = await Job.find(query).sort({ createdAt: -1 });
+            jobs = await Job.find(query).sort({ createdAt: -1 }).lean();
         }
 
         // Filter by date range if provided
@@ -60,12 +68,32 @@ export async function getJobs(filter?: string, dateFrom?: string, dateTo?: strin
             jobs = jobs.filter((job: any) => job.paymentStatus === paymentStatus);
         }
 
-        // Filter by time of day if provided
         if (timeOfDay && timeOfDay !== 'all') {
             jobs = jobs.filter((job: any) => {
                 if (!job.bookingTime) return false;
                 const calculatedCategory = categorizeTimeOfDay(job.bookingTime);
                 return calculatedCategory === timeOfDay;
+            });
+        }
+
+        // Filter by operator if provided
+        if (operator && operator !== 'all') {
+            jobs = jobs.filter((job: any) => job.operator === operator);
+        }
+
+        // Filter by search query if provided
+        if (searchQuery) {
+            const lowerQuery = searchQuery.toLowerCase().trim();
+            jobs = jobs.filter((job: any) => {
+                return (
+                    (job.customerName && job.customerName.toLowerCase().includes(lowerQuery)) ||
+                    (job.pickup && job.pickup.toLowerCase().includes(lowerQuery)) ||
+                    (job.dropoff && job.dropoff.toLowerCase().includes(lowerQuery)) ||
+                    (job.jobRef && job.jobRef.toLowerCase().includes(lowerQuery)) ||
+                    (job.notes && job.notes.toLowerCase().includes(lowerQuery)) ||
+                    (job.vehicle && job.vehicle.toLowerCase().includes(lowerQuery)) ||
+                    (job.operator && job.operator.toLowerCase().includes(lowerQuery))
+                );
             });
         }
 
@@ -125,6 +153,27 @@ export async function getJobCounts() {
             cancelled: 0,
             archived: 0
         };
+    }
+}
+
+export async function getUniqueOperators() {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    await dbConnect();
+    try {
+        const operators = await Job.distinct('operator', {
+            userId: session.user.id,
+            operator: { $ne: null }
+        });
+
+        // Filter out empty strings and sort
+        return operators
+            .filter(op => op && op.trim() !== '')
+            .sort((a, b) => a.localeCompare(b));
+    } catch (error) {
+        console.error("Error fetching unique operators:", error);
+        return [];
     }
 }
 

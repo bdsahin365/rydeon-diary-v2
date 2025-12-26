@@ -139,27 +139,27 @@ export function ProfitCalculator({ job, distance: distanceStr, duration: duratio
             )}
 
             {/* Top Card: Summary */}
-            <Card className="bg-emerald-50/50 border-emerald-200 p-4 flex flex-col gap-2">
+            <Card className="bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 p-4 flex flex-col gap-2">
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
                         <p className="text-xs text-muted-foreground font-medium mb-0.5">Total profit</p>
-                        <p className="text-xl font-bold text-emerald-700">{formatCurrency(calculations.totalProfit)}</p>
+                        <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.totalProfit)}</p>
                     </div>
                     <div>
                         <p className="text-xs text-muted-foreground font-medium mb-0.5">Profit Margin</p>
-                        <p className="text-xl font-bold text-emerald-700">{profitMargin.toFixed(1)}%</p>
+                        <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{profitMargin.toFixed(1)}%</p>
                     </div>
                     <div>
                         <p className="text-xs text-muted-foreground font-medium mb-0.5">/mile profit</p>
-                        <p className="text-xl font-bold text-emerald-700">{formatCurrency(calculations.profitPerMile)}</p>
+                        <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.profitPerMile)}</p>
                     </div>
                 </div>
                 <div className="flex justify-center">
                     <div className={cn(
                         "px-4 py-1 rounded-full text-[10px] font-medium text-white shadow-sm",
-                        profitMargin >= 50 ? "bg-emerald-700" :
-                            profitMargin >= 30 ? "bg-emerald-600" :
-                                profitMargin > 0 ? "bg-emerald-500" : "bg-red-500"
+                        profitMargin >= 50 ? "bg-emerald-700 dark:bg-emerald-600" :
+                            profitMargin >= 30 ? "bg-emerald-600 dark:bg-emerald-500" :
+                                profitMargin > 0 ? "bg-emerald-500 dark:bg-emerald-400" : "bg-red-500 dark:bg-red-600"
                     )}>
                         {profitMargin >= 50 ? `Excellent profit margins! (${profitMargin.toFixed(1)}%)` :
                             profitMargin >= 30 ? `Good profit margins (${profitMargin.toFixed(1)}%)` :
