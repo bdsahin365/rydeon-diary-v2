@@ -29,6 +29,7 @@ CRITICAL RULES:
 - If a price is mentioned with currency symbol (£, €, $), extract the numeric value only
 - Include any special instructions or notes in the notes field
 - If the image contains multiple jobs, ONLY parse the one that seems most prominent or if it's a detail view, parse that single job.
+- ALWAYS extract "ID: XXXXX" or top-header reference numbers (e.g., "6213666-2") and add to 'notes' as "External ID: XXXXX".
 
 FIELD EXTRACTION GUIDELINES:
 - price: Extract numeric value only (e.g., "£107" → "107")
@@ -43,6 +44,7 @@ FIELD EXTRACTION GUIDELINES:
 - luggage: If not specified, return {"cabin": 0, "checked": 0}
 - notes: Include meeting signs, special requests, or any other relevant info
 - operator: Extract if mentioned (e.g., "Uber", "Airport Move ltd")
+- External IDs: Look for Job IDs/Ref Numbers (e.g., "6213666-2", "ID: 4547628") in headers or top bars. Append to notes as "External ID: [ID]".
 
 RETURN FORMAT:
 Return ONLY a valid JSON object with these exact fields:

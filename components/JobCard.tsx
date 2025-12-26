@@ -124,10 +124,17 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
     }
 
     // Parse price (e.g., "£55 NET" -> 55)
+    // Parse price (e.g., "£55 NET" -> 55)
     let priceValue = 0;
+    let parsedPrice = 0;
+
     if (job.price) {
         const priceString = job.price.toString();
-        priceValue = parseFloat(priceString.replace(/[^\d.]/g, '')) || 0;
+        parsedPrice = parseFloat(priceString.replace(/[^\d.]/g, '')) || 0;
+    }
+
+    if (parsedPrice > 0) {
+        priceValue = parsedPrice;
     } else if (job.fare) {
         priceValue = job.fare;
     }
