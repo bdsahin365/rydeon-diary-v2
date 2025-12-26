@@ -37,7 +37,7 @@ export async function getStatsSummary() {
         let lastMonthRevenue = 0;
 
         jobs.forEach((job: any) => {
-            const price = typeof job.price === 'number' ? job.price : parsePrice(job.price);
+            const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
             // Calculate Profit: Price - Operator Fee - Airport Fee
             // Note: Profit field might be pre-calculated in DB, but let's recalculate to be safe or use it
             const profit = job.profit || (price - (job.operatorFeeAmount || 0) - (job.airportFee || 0)); // Simplified
@@ -148,7 +148,7 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' = '30d') {
         }
 
         if (date && date >= startDate) {
-            const price = typeof job.price === 'number' ? job.price : parsePrice(job.price);
+            const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
             const profit = job.profit || price; // Fallback
 
             let key = '';
@@ -183,7 +183,7 @@ export async function getOperatorStats() {
 
     jobs.forEach((j: any) => {
         const op = j.operator || 'Unknown';
-        const price = typeof j.price === 'number' ? j.price : parsePrice(j.price);
+        const price = (typeof j.fare === 'number' ? j.fare : 0) || (typeof j.parsedPrice === 'number' ? j.parsedPrice : 0) || (typeof j.price === 'number' ? j.price : parsePrice(j.price));
         const curr = map.get(op) || { jobs: 0, revenue: 0 };
         curr.jobs += 1;
         curr.revenue += price;
