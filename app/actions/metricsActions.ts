@@ -6,23 +6,27 @@ import { auth } from "@/auth";
 import { startOfMonth, subMonths, startOfWeek, subDays, format, parse, isValid, differenceInMinutes, startOfDay, endOfDay } from "date-fns";
 import { parsePrice, parseJobDate } from "@/lib/utils";
 
-export async function getStatsSummary() {
+export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Unauthorized" };
     const userId = session.user.id;
 
     await dbConnect();
+    await dbConnect();
     const now = new Date();
-    const firstDayOfMonth = startOfMonth(now);
-    const firstDayOfLastMonth = startOfMonth(subMonths(now, 1));
+    // Use filters if provided, otherwise default to all time (or appropriate default) logic
+    // But existing getStatsSummary logic was doing some month vs last month comparison.
+    // If date filter is present, we might want to just show totals for that range, 
+    // OR we change the comparison to be "this range vs previous range of same duration".
+    // For now, let's keep it simple: if filtered, calculate stats for that specific range.
+    // Comparison might be tricky, maybe just show value.
 
     try {
         const jobs = await Job.find({
             userId,
             status: 'completed',
-            // Ideally we filter by date here, but for now fetch all completed to calculate month stats locally
-            // or do aggregation. Let's do aggregation for performance.
         }).lean();
+
 
         // Let's filter in memory for now to handle custom string parsing if needed, 
         // or refine the query if bookingDate is strictly formatted.
@@ -38,21 +42,20 @@ export async function getStatsSummary() {
         let lastMonthRevenue = 0;
 
         jobs.forEach((job: any) => {
-            const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
-            // Calculate Profit: Price - Operator Fee - Airport Fee
-            // Note: Profit field might be pre-calculated in DB, but let's recalculate to be safe or use it
-            const profit = job.profit || (price - (job.operatorFeeAmount || 0) - (job.airportFee || 0)); // Simplified
-
             const dateStr = job.bookingDate;
             let jobDate: Date | null = null;
-
             if (dateStr instanceof Date) jobDate = dateStr;
-            else if (typeof dateStr === 'string') {
-                jobDate = parseJobDate(dateStr) || null;
-            }
+            else if (typeof dateStr === 'string') jobDate = parseJobDate(dateStr) || null;
 
             if (jobDate) {
-                // All-time stats accumulation
+                // Apply Date Filter if provided
+                if (dateFrom && jobDate < startOfDay(dateFrom)) return;
+                if (dateTo && jobDate > endOfDay(dateTo)) return;
+
+                const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+                const profit = job.profit || (price - (job.operatorFeeAmount || 0) - (job.airportFee || 0));
+
+                // All-time (or Filtered Range) stats
                 totalRevenue += price;
                 totalProfit += profit;
                 totalJobs += 1;
@@ -71,24 +74,35 @@ export async function getStatsSummary() {
                     if (!h && !m && !isNaN(parseInt(job.duration))) mins = parseInt(job.duration);
                     totalDurationMins += mins;
                 }
-
-                // Trend Calculation Logic (Monthly)
-                if (jobDate >= firstDayOfMonth) {
-                    currentMonthRevenue += price;
-                } else if (jobDate >= firstDayOfLastMonth && jobDate < firstDayOfMonth) {
-                    lastMonthRevenue += price;
-                }
-            } else {
-                console.log(`[REV] Excluded Job (Invalid Date): ${job.customerName} | Date: ${job.bookingDate}`);
             }
         });
-        console.log(`[REV] Total Revenue: ${totalRevenue}`);
 
-        // Calculate efficiency (Hourly Rate)
+        // If filtering, we lose the "trend" relative to last month unless we explicitly calculate "previous period".
+        // For simplicity now, if date filter is active, trend = 0.
+        // If no filter, we rely on the original logic (implied all time? No, original logic was implicit).
+        // Actually original logic did currentMonth vs LastMonth.
+        // Let's preserve that ONLY if no filter is applied.
+
+        let revenueTrend = 0;
+        if (!dateFrom && !dateTo) {
+            const firstDayOfMonth = startOfMonth(now);
+            const firstDayOfLastMonth = startOfMonth(subMonths(now, 1));
+
+            let currentMonthRevenue = 0;
+            let lastMonthRevenue = 0;
+
+            jobs.forEach((job: any) => {
+                const d = parseJobDate(job.bookingDate);
+                if (d) {
+                    const p = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+                    if (d >= firstDayOfMonth) currentMonthRevenue += p;
+                    else if (d >= firstDayOfLastMonth && d < firstDayOfMonth) lastMonthRevenue += p;
+                }
+            })
+            revenueTrend = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+        }
+
         const hourlyRate = totalDurationMins > 0 ? (totalRevenue / (totalDurationMins / 60)) : 0;
-
-        // Calculate trends
-        const revenueTrend = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
         return {
             revenue: { value: totalRevenue, trend: revenueTrend },
@@ -104,16 +118,11 @@ export async function getStatsSummary() {
     }
 }
 
-export async function getEarningsHistory(range: '7d' | '30d' | '12m' = '30d') {
+export async function getEarningsHistory(range: '7d' | '30d' | '12m' | 'custom' = '30d', dateFrom?: Date, dateTo?: Date) {
     const session = await auth();
     if (!session?.user?.id) return [];
     await dbConnect();
 
-    // Mocking logic vs Aggregation. 
-    // Aggregation is better.
-    // We need to group by bookingDate.
-
-    // For simplicity and robustness with string dates, let's fetch and map.
     const jobs = await Job.find({
         userId: session.user.id,
         status: 'completed'
@@ -122,21 +131,36 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' = '30d') {
     const dataMap = new Map<string, { revenue: number, profit: number }>();
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = now; // Default end is now
 
-    if (range === '7d') startDate = subDays(now, 7);
-    else if (range === '12m') startDate = subMonths(now, 12);
-    else startDate = subDays(now, 30);
+    if (dateFrom && dateTo) {
+        // Custom Range
+        startDate = dateFrom;
+        endDate = dateTo;
+    } else {
+        if (range === '7d') startDate = subDays(now, 7);
+        else if (range === '12m') startDate = subMonths(now, 12);
+        else startDate = subDays(now, 30);
+    }
 
-    // Initialize map with empty days/months
-    if (range !== '12m') {
-        for (let d = new Date(startDate); d <= now; d.setDate(d.getDate() + 1)) {
-            dataMap.set(format(d, 'dd/MM'), { revenue: 0, profit: 0 });
+    // Initialize map
+    const shouldUseMonths = range === '12m' || (dateFrom && dateTo && differenceInMinutes(dateTo, dateFrom) > 60 * 24 * 90); // > 90 days use months? simple logic
+
+    if (shouldUseMonths) {
+        // For custom large ranges, dynamic initialization might be needed, but sticking to 12m logic for now or filtered entries.
+        // Simpler: iterate existing jobs and fill. 
+        // But user wants to see empty bars too.
+        // Let's stick to generating keys based on start/end.
+        let curr = new Date(startDate);
+        while (curr <= endDate) {
+            dataMap.set(format(curr, 'MMM yyyy'), { revenue: 0, profit: 0 });
+            curr = new Date(curr.setMonth(curr.getMonth() + 1));
         }
     } else {
-        // For 12m, key is MMM
-        for (let i = 0; i < 12; i++) {
-            const d = subMonths(now, 11 - i);
-            dataMap.set(format(d, 'MMM'), { revenue: 0, profit: 0 });
+        let curr = new Date(startDate);
+        while (curr <= endDate) {
+            dataMap.set(format(curr, 'dd/MM'), { revenue: 0, profit: 0 });
+            curr = new Date(curr.setDate(curr.getDate() + 1));
         }
     }
 
@@ -149,12 +173,12 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' = '30d') {
             date = job.bookingDate;
         }
 
-        if (date && date >= startDate) {
+        if (date && date >= startOfDay(startDate) && date <= endOfDay(endDate)) {
             const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
-            const profit = job.profit || price; // Fallback
+            const profit = job.profit || price;
 
             let key = '';
-            if (range === '12m') key = format(date, 'MMM');
+            if (shouldUseMonths) key = format(date, 'MMM yyyy');
             else key = format(date, 'dd/MM');
 
             // Find existing (or closest if we pre-filled)
@@ -162,7 +186,9 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' = '30d') {
                 const existing = dataMap.get(key)!;
                 existing.revenue += price;
                 existing.profit += profit;
-                dataMap.set(key, existing); // primitive update
+                dataMap.set(key, existing);
+            } else if (!shouldUseMonths && dateFrom && dateTo) {
+                // If custom range and we missed one (e.g. slight mismatch), we can auto-add or ignore.
             }
         }
     });
@@ -174,16 +200,20 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' = '30d') {
     }));
 }
 
-export async function getOperatorStats() {
+export async function getOperatorStats(dateFrom?: Date, dateTo?: Date) {
     const session = await auth();
     if (!session?.user?.id) return [];
     await dbConnect();
 
     // Fetch jobs manually to handle messy price strings/mixed types safely
-    const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('operator price').lean();
+    const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('operator price bookingDate').lean();
     const map = new Map<string, { jobs: number, revenue: number }>();
 
     jobs.forEach((j: any) => {
+        const d = parseJobDate(j.bookingDate);
+        if (dateFrom && (!d || d < startOfDay(dateFrom))) return;
+        if (dateTo && (!d || d > endOfDay(dateTo))) return;
+
         const op = j.operator || 'Unknown';
         const price = (typeof j.fare === 'number' ? j.fare : 0) || (typeof j.parsedPrice === 'number' ? j.parsedPrice : 0) || (typeof j.price === 'number' ? j.price : parsePrice(j.price));
         const curr = map.get(op) || { jobs: 0, revenue: 0 };
@@ -260,7 +290,35 @@ export async function getUpcomingJobs() {
 
 import { categorizeTimeOfDay } from "@/lib/time-utils";
 
-export async function getReportStats() {
+export async function getVehicleStats() {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+    await dbConnect();
+
+    try {
+        const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('vehicle price').lean();
+        const map = new Map<string, { jobs: number, revenue: number }>();
+
+        jobs.forEach((j: any) => {
+            const v = j.vehicle || 'Unknown';
+            const price = (typeof j.fare === 'number' ? j.fare : 0) || (typeof j.parsedPrice === 'number' ? j.parsedPrice : 0) || (typeof j.price === 'number' ? j.price : parsePrice(j.price));
+
+            const curr = map.get(v) || { jobs: 0, revenue: 0 };
+            curr.jobs += 1;
+            curr.revenue += price;
+            map.set(v, curr);
+        });
+
+        return Array.from(map.entries())
+            .map(([name, data]) => ({ name, ...data }))
+            .sort((a, b) => b.revenue - a.revenue);
+    } catch (error) {
+        console.error("Error fetching vehicle stats:", error);
+        return [];
+    }
+}
+
+export async function getReportStats(dateFrom?: Date, dateTo?: Date) {
     const session = await auth();
     if (!session?.user?.id) return null;
     await dbConnect();
@@ -271,16 +329,16 @@ export async function getReportStats() {
         const stats = {
             total: 0,
             status: {
-                scheduled: 0,
-                completed: 0,
-                cancelled: 0,
-                archived: 0
-            } as Record<string, number>,
+                scheduled: { count: 0, value: 0 },
+                completed: { count: 0, value: 0 },
+                cancelled: { count: 0, value: 0 },
+                archived: { count: 0, value: 0 }
+            } as Record<string, { count: number, value: number }>,
             payment: {
-                paid: 0,
-                unpaid: 0,
-                overdue: 0
-            } as Record<string, number>,
+                paid: { count: 0, value: 0 },
+                unpaid: { count: 0, value: 0 },
+                overdue: { count: 0, value: 0 }
+            } as Record<string, { count: number, value: number }>,
             timeOfDay: {
                 midnight: 0,
                 day: 0,
@@ -289,24 +347,28 @@ export async function getReportStats() {
         };
 
         jobs.forEach((job: any) => {
+            const d = parseJobDate(job.bookingDate);
+            if (dateFrom && (!d || d < startOfDay(dateFrom))) return;
+            if (dateTo && (!d || d > endOfDay(dateTo))) return;
+
             stats.total++;
+            const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
 
             // Status counts
             const status = job.status || 'unknown';
-            if (stats.status[status] !== undefined) {
-                stats.status[status]++;
-            } else {
-                // Initialize if not exists (e.g. 'in-progress' or unknown)
-                stats.status[status] = (stats.status[status] || 0) + 1;
+            if (!stats.status[status]) {
+                stats.status[status] = { count: 0, value: 0 };
             }
+            stats.status[status].count++;
+            stats.status[status].value += price;
 
             // Payment Status
             const payment = job.paymentStatus || 'unpaid';
-            if (stats.payment[payment] !== undefined) {
-                stats.payment[payment]++;
-            } else {
-                stats.payment[payment] = (stats.payment[payment] || 0) + 1;
+            if (!stats.payment[payment]) {
+                stats.payment[payment] = { count: 0, value: 0 };
             }
+            stats.payment[payment].count++;
+            stats.payment[payment].value += price;
 
             // Time of Day
             if (job.bookingTime) {

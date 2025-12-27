@@ -8,8 +8,8 @@ import { OperatorBreakdown } from "@/components/dashboard/operator-breakdown";
 interface ReportsViewProps {
     stats: {
         total: number;
-        status: Record<string, number>;
-        payment: Record<string, number>;
+        status: Record<string, { count: number, value: number }>;
+        payment: Record<string, { count: number, value: number }>;
         timeOfDay: Record<string, number>;
     } | null;
     operatorData: any[];
@@ -26,8 +26,8 @@ export function ReportsView({ stats, operatorData }: ReportsViewProps) {
     if (!stats) return <div className="p-4">No report data available.</div>;
 
     // Transform data for charts
-    const statusData = Object.entries(stats.status).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
-    const paymentData = Object.entries(stats.payment).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
+    const statusData = Object.entries(stats.status).map(([name, data]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value: data.count }));
+    const paymentData = Object.entries(stats.payment).map(([name, data]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value: data.count }));
     const timeData = [
         { name: 'Midnight (12AM-6AM)', value: stats.timeOfDay.midnight || 0 },
         { name: 'Day (6AM-6PM)', value: stats.timeOfDay.day || 0 },

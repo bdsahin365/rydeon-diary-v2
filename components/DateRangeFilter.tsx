@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addDays } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addDays, subWeeks, subMonths, startOfYear, endOfYear, subYears } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -18,10 +18,10 @@ type DateRange = {
 
 type PresetOption = {
     label: string;
-    getValue: () => DateRange;
+    getValue: () => DateRange | undefined;
 };
 
-const presets: PresetOption[] = [
+const defaultPresets: PresetOption[] = [
     {
         label: "Today",
         getValue: () => {
@@ -62,19 +62,97 @@ const presets: PresetOption[] = [
     },
 ];
 
+const dashboardPresets: PresetOption[] = [
+    {
+        label: "Today",
+        getValue: () => {
+            const today = new Date();
+            return { from: today, to: today };
+        },
+    },
+    {
+        label: "This Week",
+        getValue: () => ({
+            from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+            to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+        }),
+    },
+    {
+        label: "Last Week",
+        getValue: () => {
+            const lastWeekStart = subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1);
+            return {
+                from: lastWeekStart,
+                to: endOfWeek(lastWeekStart, { weekStartsOn: 1 }),
+            };
+        },
+    },
+    {
+        label: "This Month",
+        getValue: () => ({
+            from: startOfMonth(new Date()),
+            to: endOfMonth(new Date()),
+        }),
+    },
+    {
+        label: "Last Month",
+        getValue: () => {
+            const lastMonthStart = subMonths(startOfMonth(new Date()), 1);
+            return {
+                from: lastMonthStart,
+                to: endOfMonth(lastMonthStart),
+            };
+        },
+    },
+    {
+        label: "This Year",
+        getValue: () => ({
+            from: startOfYear(new Date()),
+            to: endOfYear(new Date()),
+        }),
+    },
+    {
+        label: "Last Year",
+        getValue: () => {
+            const lastYearStart = subYears(startOfYear(new Date()), 1);
+            return {
+                from: lastYearStart,
+                to: endOfYear(lastYearStart),
+            };
+        },
+    },
+    {
+        label: "All Time",
+        getValue: () => ({
+            from: new Date(0), // 1970-01-01
+            to: addDays(new Date(), 365 * 100), // ~100 years in future
+        }),
+    },
+];
+
 interface DateRangeFilterProps {
     mobileMode?: boolean;
     className?: string;
     compact?: boolean;
+    presetType?: 'default' | 'dashboard';
+    initialDateFrom?: Date;
+    initialDateTo?: Date;
 }
 
-export function DateRangeFilter({ mobileMode, className, compact }: DateRangeFilterProps = {}) {
+export function DateRangeFilter({ mobileMode, className, compact, presetType = 'default', initialDateFrom, initialDateTo }: DateRangeFilterProps = {}) {
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const [open, setOpen] = React.useState(false);
-    const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
 
-    // Parse dates from URL on mount
+    // Initialize state with props (defaults) if available, otherwise undefined
+    const [dateRange, setDateRange] = React.useState<DateRange | undefined>(
+        initialDateFrom && initialDateTo ? { from: initialDateFrom, to: initialDateTo } : undefined
+    );
+
+    const activePresets = presetType === 'dashboard' ? dashboardPresets : defaultPresets;
+
+    // Parse dates from URL on mount or update
     React.useEffect(() => {
         const fromParam = searchParams.get("dateFrom");
         const toParam = searchParams.get("dateTo");
@@ -92,11 +170,22 @@ export function DateRangeFilter({ mobileMode, className, compact }: DateRangeFil
             } catch (e) {
                 console.error("Error parsing date params:", e);
             }
+        } else if (!fromParam && !toParam) {
+            // Revert to default if params are cleared
+            if (initialDateFrom && initialDateTo) {
+                setDateRange({ from: initialDateFrom, to: initialDateTo });
+            } else {
+                setDateRange(undefined);
+            }
         }
-    }, [searchParams]);
+    }, [searchParams, initialDateFrom, initialDateTo]);
 
     const handlePresetClick = (preset: PresetOption) => {
         const range = preset.getValue();
+        if (!range) {
+            clearFilter();
+            return;
+        }
         setDateRange(range);
         updateURL(range);
         setOpen(false);
@@ -120,7 +209,7 @@ export function DateRangeFilter({ mobileMode, className, compact }: DateRangeFil
         params.set("dateFrom", fromStr);
         params.set("dateTo", toStr);
 
-        router.push(`/my-jobs?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`);
     };
 
     const clearFilter = () => {
@@ -128,7 +217,7 @@ export function DateRangeFilter({ mobileMode, className, compact }: DateRangeFil
         const params = new URLSearchParams(searchParams.toString());
         params.delete("dateFrom");
         params.delete("dateTo");
-        router.push(`/my-jobs?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`);
         setOpen(false);
     };
 
@@ -144,9 +233,10 @@ export function DateRangeFilter({ mobileMode, className, compact }: DateRangeFil
         if (!dateRange) return "Select Date Range";
 
         // Check if it matches a preset
-        for (const preset of presets) {
+        for (const preset of activePresets) {
             const presetRange = preset.getValue();
             if (
+                presetRange &&
                 format(dateRange.from, 'yyyy-MM-dd') === format(presetRange.from, 'yyyy-MM-dd') &&
                 format(dateRange.to, 'yyyy-MM-dd') === format(presetRange.to, 'yyyy-MM-dd')
             ) {
@@ -191,7 +281,7 @@ export function DateRangeFilter({ mobileMode, className, compact }: DateRangeFil
                 {isMobileView && <p className="text-sm font-medium mb-2 text-muted-foreground px-1">Quick Select</p>}
 
                 <div className={cn("grid gap-2", isMobileView ? "grid-cols-2" : "flex flex-col")}>
-                    {presets.map((preset) => (
+                    {activePresets.map((preset) => (
                         <Button
                             key={preset.label}
                             variant="outline"
