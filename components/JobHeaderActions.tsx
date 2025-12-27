@@ -5,6 +5,8 @@ import { Download, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchFilter } from "@/components/SearchFilter";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { ExportJobsDialog } from "@/components/ExportJobsDialog";
+
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -34,15 +36,9 @@ export function JobHeaderActions() {
                 />
             </div>
 
-            {/* Export Button - Icon only on mobile, text on desktop */}
-            <Button variant="outline" size="icon" className="flex sm:hidden shrink-0 text-muted-foreground bg-card hover:bg-muted">
-                <Download className="h-4 w-4" />
-                <span className="sr-only">Export</span>
-            </Button>
-            <Button variant="outline" className="hidden sm:flex text-muted-foreground bg-card hover:bg-muted">
-                <Download className="mr-2 h-4 w-4" />
-                Export
-            </Button>
+            <ExportJobsDialog />
+
+
 
             {/* Refresh Button */}
             <Button

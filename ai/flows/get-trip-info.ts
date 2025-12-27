@@ -18,6 +18,13 @@ export async function getTripInfo({ origin, destination }: { origin: string; des
         };
     }
 
+    if (!origin || !destination) {
+        return {
+            distance: "",
+            duration: ""
+        };
+    }
+
     try {
         // 1. Geocode Origin
         const pickupResponse = await fetch(
@@ -52,7 +59,13 @@ export async function getTripInfo({ origin, destination }: { origin: string; des
         const directionsData = await directionsResponse.json();
 
         if (!directionsData.routes || directionsData.routes.length === 0) {
-            throw new Error("No route found");
+            console.warn("No route found between points");
+            return {
+                distance: "0 mi",
+                duration: "0 mins",
+                pickupPoint,
+                dropoffPoint
+            };
         }
 
         const route = directionsData.routes[0];

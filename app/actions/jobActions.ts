@@ -3,9 +3,139 @@
 import dbConnect from "@/lib/mongodb";
 import Job, { IJob } from "@/models/Job";
 import { revalidatePath } from "next/cache";
+import { generateJobRef } from "@/lib/job-utils";
 import { auth } from "@/auth";
-import { parse, isWithinInterval, isValid } from "date-fns";
+import { parse, isWithinInterval, isValid, format } from "date-fns";
 import { categorizeTimeOfDay } from "@/lib/time-utils";
+
+export async function exportJobs(
+    type: 'current' | 'custom',
+    filters: {
+        filter?: string;
+        paymentStatus?: string;
+        timeOfDay?: string;
+        search?: string;
+        operator?: string;
+        dateFrom?: string; // DD/MM/YYYY
+        dateTo?: string;   // DD/MM/YYYY
+    },
+    customRange?: {
+        from: Date;
+        to: Date;
+    }
+) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    let jobs = [];
+
+    if (type === 'custom' && customRange) {
+        // For custom range, we ignore other filters and only use the date range
+        // We need to format the dates to DD/MM/YYYY string for getJobs
+        const fromStr = format(customRange.from, 'dd/MM/yyyy');
+        const toStr = format(customRange.to, 'dd/MM/yyyy');
+
+        jobs = await getJobs(undefined, fromStr, toStr, undefined, undefined, undefined, undefined);
+    } else {
+        // For current view, use provided filters
+        jobs = await getJobs(
+            filters.filter,
+            filters.dateFrom,
+            filters.dateTo,
+            filters.paymentStatus,
+            filters.timeOfDay,
+            filters.search,
+            filters.operator
+        );
+    }
+
+    // Convert to CSV
+    if (!jobs || jobs.length === 0) {
+        return { csv: "" };
+    }
+
+    // Define headers and fields
+    const headers = [
+        "Job Ref",
+        "Booking Date",
+        "Time",
+        "Customer",
+        "Pickup",
+        "Dropoff",
+        "Vehicle",
+        "Price",
+        "Cost",
+        "Profit",
+        "Operator",
+        "Flight Number",
+        "Status",
+        "Payment"
+    ];
+
+    const escapeCsv = (str: string | number | undefined | null) => {
+        if (str === null || str === undefined) return "";
+        const stringValue = String(str);
+        if (stringValue.includes(",") || stringValue.includes("\"") || stringValue.includes("\n")) {
+            return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+    };
+
+    const rows = jobs.map((job: any) => {
+        // Robust price calculation matching JobCard logic
+        let priceValue = 0;
+        let parsedPrice = 0;
+
+        if (job.price) {
+            const priceString = job.price.toString();
+            // Parse numbers, handling "£55", "55.00", etc.
+            parsedPrice = parseFloat(priceString.replace(/[^\d.]/g, '')) || 0;
+        }
+
+        if (parsedPrice > 0) {
+            priceValue = parsedPrice;
+        } else if (job.fare) {
+            priceValue = job.fare;
+        }
+
+        // Format as simply the value, or keep currency symbol if preferred? 
+        // User likely wants just the number or consistent formatting. 
+        // Let's stick to the raw value or parsed value. 
+        // If we want to mimic the previous string behavior but with "0" check:
+        // Actually, CSV usually prefers raw numbers or consistent currency.
+        // Let's export the determined numeric value formatted to 2 decimals if it's a number.
+        const displayPrice = priceValue > 0 ? priceValue.toFixed(2) : "0.00";
+        const profitValue = job.profit || 0;
+        const displayProfit = profitValue.toFixed(2);
+
+        // Calculate Cost = Price - Profit (if price is available)
+        // If price is 0, cost is likely 0 or undefined.
+        // Assuming Cost means "Cost to Company" or "Check / Price Paid to Driver"
+        const costValue = Math.max(0, priceValue - profitValue);
+        const displayCost = costValue.toFixed(2);
+
+        return [
+            job.jobRef,
+            job.bookingDate,
+            job.bookingTime,
+            job.customerName,
+            job.pickup,
+            job.dropoff,
+            job.vehicle,
+            displayPrice,
+            displayCost,
+            displayProfit,
+            job.operator,
+            job.flightNumber,
+            job.status,
+            job.paymentStatus
+        ].map(escapeCsv).join(",");
+    });
+
+    const csv = [headers.join(","), ...rows].join("\n");
+    return { csv };
+}
+
 
 export async function getJobs(
     filter?: string,
@@ -207,7 +337,8 @@ export async function seedJobs(formData?: FormData) {
                 paymentStatus: "overdue",
                 customerPhone: "+27765974178",
                 originalFirebaseId: "-OZk6RbH_MaEExQpJjK1",
-                userId: session.user.id
+                userId: session.user.id,
+                jobRef: "RYDE10092025-1"
             },
             {
                 customerName: "John Doe",
@@ -222,7 +353,8 @@ export async function seedJobs(formData?: FormData) {
                 profit: 54.00,
                 paymentStatus: "unpaid",
                 notes: "Flight landing at 16:00",
-                userId: session.user.id
+                userId: session.user.id,
+                jobRef: "RYDE29072025-1"
             },
             {
                 customerName: "Jane Smith",
@@ -236,7 +368,8 @@ export async function seedJobs(formData?: FormData) {
                 price: "45.00",
                 profit: 35.00,
                 paymentStatus: "paid",
-                userId: session.user.id
+                userId: session.user.id,
+                jobRef: "RYDE28072025-1"
             }
         ];
 
@@ -321,25 +454,7 @@ export async function createJob(data: Partial<IJob>) {
             bookingDate = `${d}/${m}/${y}`;
         }
 
-        const [day, month, year] = bookingDate.split('/');
-        const dateStr = `${day}${month}${year}`;
-
-        // Find jobs for this date to determine index
-        const jobsForDate = await Job.find({
-            userId: session.user.id,
-            jobRef: { $regex: `^RYDE${dateStr}` }
-        }).sort({ jobRef: -1 });
-
-        let index = 1;
-        if (jobsForDate.length > 0) {
-            const lastJobRef = jobsForDate[0].jobRef;
-            if (lastJobRef) {
-                const lastIndex = parseInt(lastJobRef.split('-')[1] || '0');
-                index = lastIndex + 1;
-            }
-        }
-
-        const jobRef = `RYDE${dateStr}-${index}`;
+        const jobRef = await generateJobRef(bookingDate);
 
         // Check for overlapping jobs
         const overlapCheck = await checkJobOverlap(
@@ -490,4 +605,77 @@ function parseDuration(duration: string): number {
     if (minMatch) totalMinutes += parseInt(minMatch[1]);
 
     return totalMinutes || 0;
+}
+
+export async function backfillJobRefs() {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    await dbConnect();
+    try {
+        const jobs = await Job.find({
+            userId: session.user.id,
+            $or: [{ jobRef: { $exists: false } }, { jobRef: "" }, { jobRef: null }]
+        }).sort({ bookingDate: 1, createdAt: 1 });
+
+        let updatedCount = 0;
+
+        // Group jobs by date to maintain index correctly
+        const jobsByDate: Record<string, any[]> = {};
+
+        // First pass: organize jobs by date
+        for (const job of jobs) {
+            let bookingDate = job.bookingDate;
+            if (!bookingDate) continue; // Skip if no date
+
+            // Normalize date to DD/MM/YYYY
+            if (bookingDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const [y, m, d] = bookingDate.split('-');
+                bookingDate = `${d}/${m}/${y}`;
+            }
+
+            if (!jobsByDate[bookingDate]) {
+                jobsByDate[bookingDate] = [];
+            }
+            jobsByDate[bookingDate].push(job);
+        }
+
+        // Second pass: generate IDs and update
+        for (const [date, dateJobs] of Object.entries(jobsByDate)) {
+            const [day, month, year] = date.split('/');
+            const dateStr = `${day}${month}${year}`;
+
+            // Find existing max index for this date GLOBALLY to avoid collisions
+            const existingJobs = await Job.find({
+                jobRef: { $regex: `^RYDE${dateStr}` }
+            });
+
+            let startIndex = 1;
+            if (existingJobs.length > 0) {
+                const indices = existingJobs.map(j => {
+                    if (!j.jobRef) return 0;
+                    const parts = j.jobRef.split('-');
+                    return parts.length > 1 ? parseInt(parts[1]) : 0;
+                });
+                startIndex = Math.max(...indices) + 1;
+            }
+
+            for (let i = 0; i < dateJobs.length; i++) {
+                const job = dateJobs[i];
+                const jobRef = `RYDE${dateStr}-${startIndex + i}`;
+
+                await Job.updateOne(
+                    { _id: job._id },
+                    { $set: { jobRef } }
+                );
+                updatedCount++;
+            }
+        }
+
+        revalidatePath("/my-jobs");
+        return { success: true, count: updatedCount };
+    } catch (error) {
+        console.error("Error backfilling job refs:", error);
+        return { error: "Failed to backfill job refs" };
+    }
 }

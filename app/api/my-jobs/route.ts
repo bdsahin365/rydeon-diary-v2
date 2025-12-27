@@ -4,6 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import Job from "@/models/Job";
 
 import User from "@/models/User";
+import { generateJobRef } from "@/lib/job-utils";
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -28,7 +29,14 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const job = await Job.create({ ...body, userId: session.user.id });
+
+        // Generate Job Ref
+        let jobRef = body.jobRef;
+        if (!jobRef && body.bookingDate) {
+            jobRef = await generateJobRef(body.bookingDate);
+        }
+
+        const job = await Job.create({ ...body, jobRef, userId: session.user.id });
         return NextResponse.json(job);
     } catch (error) {
         console.error("Error creating job:", error);

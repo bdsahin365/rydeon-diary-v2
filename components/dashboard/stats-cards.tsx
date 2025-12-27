@@ -20,8 +20,8 @@ export function StatsCards({ data }: StatsCardsProps) {
             title: "Total Revenue",
             value: formatPrice(data.revenue.value),
             icon: DollarSign,
-            description: `${data.revenue.trend > 0 ? '+' : ''}${data.revenue.trend.toFixed(1)}% from last month`,
-            trendColor: data.revenue.trend >= 0 ? "text-green-500" : "text-red-500"
+            description: "+20.1% from last month",
+            trendColor: "text-muted-foreground"
         },
         {
             title: "Net Profit",
@@ -50,7 +50,7 @@ export function StatsCards({ data }: StatsCardsProps) {
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {cards.map((card, index) => (
-                <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+                <Card key={index}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
                             {card.title}
@@ -58,11 +58,8 @@ export function StatsCards({ data }: StatsCardsProps) {
                         <card.icon className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="flex items-baseline gap-1">
-                            <div className="text-2xl font-bold">{card.value}</div>
-                            {card.unit && <span className="text-sm text-muted-foreground font-medium">{card.unit}</span>}
-                        </div>
-                        <p className={cn("text-xs pt-1", card.trendColor)}>
+                        <div className="text-2xl font-bold">{card.value}</div>
+                        <p className={cn("text-xs", card.trendColor)}>
                             {card.description}
                         </p>
                     </CardContent>

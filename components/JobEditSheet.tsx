@@ -309,7 +309,11 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
             <SheetTrigger asChild>{children}</SheetTrigger>
             <SheetContent side={isDesktop ? "right" : "bottom"} className={cn("p-0 flex flex-col gap-0", isDesktop ? "sm:max-w-xl w-full" : "h-[90vh]")}>
                 <SheetHeader className="p-6 pb-2 border-b">
-                    <SheetTitle>{job?._id || job?.id ? 'Edit Job Details' : 'Create New Job'}</SheetTitle>
+                    <SheetTitle>
+                        {job?._id || job?.id
+                            ? (job?.jobRef ? `${job.jobRef}` : 'Edit Job Details')
+                            : 'Create New Job'}
+                    </SheetTitle>
                     <SheetDescription>
                         Make changes to the job details below. Click save when you're done.
                     </SheetDescription>

@@ -17,12 +17,7 @@ export const parsePrice = (priceStr: string | number | undefined): number => {
 };
 
 export const formatPrice = (price: number): string => {
-  return price.toLocaleString('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return "£" + price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
 export const parseJobDate = (dateStr: string | Date): Date | undefined => {

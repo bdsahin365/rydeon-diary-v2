@@ -61,6 +61,7 @@ export interface MyJob {
     profit?: number;
     pickupPoint?: { lat: number; lng: number };
     dropoffPoint?: { lat: number; lng: number };
+    jobRef?: string;
 }
 
 export interface Operator {

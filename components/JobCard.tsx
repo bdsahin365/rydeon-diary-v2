@@ -44,6 +44,7 @@ import {
 export interface Job {
     _id?: string;
     id?: number | string;
+    jobRef?: string;
     originalFirebaseId?: string;
     bookedAt?: string;
     bookingDate?: string;

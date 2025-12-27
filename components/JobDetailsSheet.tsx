@@ -173,7 +173,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
                         <SheetTitle>Job Details</SheetTitle>
                         <div className="flex items-center gap-1">
                             <span className="text-xs font-mono font-medium text-muted-foreground bg-muted px-2 py-1 rounded-md flex items-center gap-2">
-                                {(job as any).jobRef || (job as any)._id || (job as any).id}
+                                {(job as any).jobRef ? (job as any).jobRef : ((job as any)._id || (job as any).id)}
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -183,14 +183,14 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
                                         if (ref) {
                                             navigator.clipboard.writeText(ref.toString()).then(() => {
                                                 toast({
-                                                    title: "Job ID Copied",
-                                                    description: "Job ID copied to clipboard",
+                                                    title: "Job Ref Copied",
+                                                    description: "Reference copied to clipboard",
                                                 });
                                             }).catch(() => {
                                                 toast({
                                                     variant: "destructive",
                                                     title: "Copy Failed",
-                                                    description: "Failed to copy job ID",
+                                                    description: "Failed to copy reference",
                                                 });
                                             });
                                         }

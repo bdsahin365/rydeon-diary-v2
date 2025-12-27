@@ -257,3 +257,69 @@ export async function getUpcomingJobs() {
         .slice(0, 5)
         .map((j: any) => ({ ...j, _id: j._id.toString(), userId: j.userId.toString() }));
 }
+
+import { categorizeTimeOfDay } from "@/lib/time-utils";
+
+export async function getReportStats() {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+    await dbConnect();
+
+    try {
+        const jobs = await Job.find({ userId: session.user.id }).lean();
+
+        const stats = {
+            total: 0,
+            status: {
+                scheduled: 0,
+                completed: 0,
+                cancelled: 0,
+                archived: 0
+            } as Record<string, number>,
+            payment: {
+                paid: 0,
+                unpaid: 0,
+                overdue: 0
+            } as Record<string, number>,
+            timeOfDay: {
+                midnight: 0,
+                day: 0,
+                evening: 0
+            } as Record<string, number>
+        };
+
+        jobs.forEach((job: any) => {
+            stats.total++;
+
+            // Status counts
+            const status = job.status || 'unknown';
+            if (stats.status[status] !== undefined) {
+                stats.status[status]++;
+            } else {
+                // Initialize if not exists (e.g. 'in-progress' or unknown)
+                stats.status[status] = (stats.status[status] || 0) + 1;
+            }
+
+            // Payment Status
+            const payment = job.paymentStatus || 'unpaid';
+            if (stats.payment[payment] !== undefined) {
+                stats.payment[payment]++;
+            } else {
+                stats.payment[payment] = (stats.payment[payment] || 0) + 1;
+            }
+
+            // Time of Day
+            if (job.bookingTime) {
+                const category = categorizeTimeOfDay(job.bookingTime);
+                if (stats.timeOfDay[category] !== undefined) {
+                    stats.timeOfDay[category]++;
+                }
+            }
+        });
+
+        return stats;
+    } catch (error) {
+        console.error("Error fetching report stats:", error);
+        return null;
+    }
+}
