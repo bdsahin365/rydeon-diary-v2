@@ -427,12 +427,55 @@ export async function checkJobOverlap(
                 bookingTime: job.bookingTime,
                 duration: job.duration,
                 pickup: job.pickup,
-                dropoff: job.dropoff
+                dropoff: job.dropoff,
+                customerName: job.customerName
             }))
         };
     } catch (error) {
         console.error("Error checking job overlap:", error);
         return { overlapping: false, jobs: [] };
+    }
+}
+
+export async function checkDuplicateJob(
+    bookingDate: string,
+    bookingTime: string,
+    customerName: string,
+    price: number
+) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { isDuplicate: false };
+    }
+
+    if (!bookingDate || !bookingTime || !customerName) {
+        return { isDuplicate: false };
+    }
+
+    await dbConnect();
+    try {
+        const query = {
+            userId: session.user.id,
+            bookingDate,
+            bookingTime,
+            customerName: { $regex: new RegExp(`^${customerName}$`, 'i') }, // Case insensitive exact match
+            status: { $ne: 'archived' },
+            $or: [
+                { price: price.toString() },
+                { price: price },
+                { fare: price }
+            ]
+        };
+
+        const duplicateJob = await Job.findOne(query);
+
+        return {
+            isDuplicate: !!duplicateJob,
+            jobId: duplicateJob?._id.toString()
+        };
+    } catch (error) {
+        console.error("Error checking duplicate job:", error);
+        return { isDuplicate: false };
     }
 }
 

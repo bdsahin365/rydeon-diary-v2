@@ -35,6 +35,11 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
     const [open, setOpen] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [isMounted, setIsMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -56,6 +61,24 @@ export function QuickFill({ pastedMessage, setPastedMessage, onParse, isParsing 
         await onParse(pastedMessage, selectedImage);
         setOpen(false);
     };
+
+    if (!isMounted) {
+        return (
+            <Card className="border-none shadow-sm bg-muted/20">
+                <CardHeader className="pb-3 pt-4 px-4">
+                    <CardTitle className="text-base font-medium flex items-center justify-between gap-2 text-foreground/80">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <span>Quick Fill</span>
+                        </div>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                    <div className="w-full h-[250px] bg-muted/10 animate-pulse rounded-lg" />
+                </CardContent>
+            </Card>
+        );
+    }
 
     if (isMobile) {
         return (

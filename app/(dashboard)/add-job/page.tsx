@@ -23,6 +23,17 @@ import { getTripInfo } from '@/ai/flows/get-trip-info';
 import { parseProviderMessage } from '@/ai/flows/parse-provider-message';
 import { ProfitCalculator } from '@/components/profit-calculator';
 import { format, parse } from 'date-fns';
+import { checkDuplicateJob } from '@/app/actions/jobActions';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { VehicleSelector } from '@/components/vehicle-selector';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -88,6 +99,8 @@ export default function AddJobPage() {
     const [existingOperators, setExistingOperators] = useState<Operator[]>([]);
     const profitCardRef = useRef<HTMLDivElement>(null);
     const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
+    const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+    const [duplicateCheckLoading, setDuplicateCheckLoading] = useState(false);
 
     const { settings } = useSettings();
     const { toast } = useToast();
@@ -232,9 +245,37 @@ export default function AddJobPage() {
         return fare - totalTripCost;
     }, [tripInfo.distance, jobDetails, settings]);
 
-    const handleSaveJob = async () => {
+    const handleSaveJob = async (skipDuplicateCheck = false) => {
         setIsSubmitting(true);
         const userId = 'default'; // This will be handled by the API route via session
+
+        // Check for duplicates first
+        if (!skipDuplicateCheck && jobDetails.bookingDate && jobDetails.bookingTime && jobDetails.customerName && jobDetails.fare) {
+            setDuplicateCheckLoading(true);
+            try {
+                const bookingDateStr = jobDetails.bookingDate instanceof Date
+                    ? format(jobDetails.bookingDate, 'dd/MM/yyyy')
+                    : jobDetails.bookingDate;
+
+                const { isDuplicate } = await checkDuplicateJob(
+                    bookingDateStr,
+                    jobDetails.bookingTime,
+                    jobDetails.customerName,
+                    jobDetails.fare
+                );
+
+                if (isDuplicate) {
+                    setShowDuplicateWarning(true);
+                    setDuplicateCheckLoading(false);
+                    setIsSubmitting(false);
+                    return;
+                }
+            } catch (error) {
+                console.error("Duplicate check failed", error);
+                // Continue with save if check fails
+            }
+            setDuplicateCheckLoading(false);
+        }
 
         const bookingDate = parseJobDate(jobDetails.bookingDate as string);
         let paymentDueDate: Date | null = null;
@@ -738,13 +779,39 @@ export default function AddJobPage() {
 
                     <StickyFooter>
                         <Button onClick={() => setCurrentStep('profit')} variant="outline" className="flex-1 md:flex-none"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                        <Button onClick={handleSaveJob} disabled={isSubmitting} className="flex-1 md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white">
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                        <Button onClick={() => handleSaveJob(false)} disabled={isSubmitting || duplicateCheckLoading} className="flex-1 md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white">
+                            {(isSubmitting || duplicateCheckLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                             Save Job
                         </Button>
                     </StickyFooter>
                 </div>
             )}
+
+            <AlertDialog open={showDuplicateWarning} onOpenChange={setShowDuplicateWarning}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Possible Duplicate Job Detected</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            A job with the same customer name, date, time, and price already exists in your diary.
+                            Are you sure you want to save this as a new job?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setShowDuplicateWarning(false);
+                                handleSaveJob(true);
+                            }}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Save Anyway
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

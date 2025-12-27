@@ -10,7 +10,9 @@ export function cn(...inputs: ClassValue[]) {
 export const parsePrice = (priceStr: string | number | undefined): number => {
   if (!priceStr) return 0;
   if (typeof priceStr === 'number') return priceStr;
-  const match = priceStr.match(/[\d.]+/);
+  // Remove commas and currency symbols, keep digits and dots
+  const cleanStr = priceStr.toString().replace(/,/g, '');
+  const match = cleanStr.match(/[\d.]+/);
   return match ? parseFloat(match[0]) : 0;
 };
 

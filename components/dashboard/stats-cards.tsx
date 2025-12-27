@@ -34,7 +34,7 @@ export function StatsCards({ data }: StatsCardsProps) {
             title: "Completed Jobs",
             value: data.jobs.value.toString(), // Ensure string
             icon: Car,
-            description: "This month",
+            description: "All time",
             trendColor: "text-muted-foreground"
         },
         {

@@ -4,7 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import Job from "@/models/Job";
 import { auth } from "@/auth";
 import { startOfMonth, subMonths, startOfWeek, subDays, format, parse, isValid, differenceInMinutes, startOfDay, endOfDay } from "date-fns";
-import { parsePrice } from "@/lib/utils";
+import { parsePrice, parseJobDate } from "@/lib/utils";
 
 export async function getStatsSummary() {
     const session = await auth();
@@ -34,6 +34,7 @@ export async function getStatsSummary() {
         let totalDistance = 0;
         let totalDurationMins = 0;
 
+        let currentMonthRevenue = 0;
         let lastMonthRevenue = 0;
 
         jobs.forEach((job: any) => {
@@ -47,46 +48,47 @@ export async function getStatsSummary() {
 
             if (dateStr instanceof Date) jobDate = dateStr;
             else if (typeof dateStr === 'string') {
-                // Try parsing
-                try {
-                    const parsed = parse(dateStr, 'dd/MM/yyyy', new Date());
-                    if (isValid(parsed)) jobDate = parsed;
-                } catch (e) { }
+                jobDate = parseJobDate(dateStr) || null;
             }
 
             if (jobDate) {
-                if (jobDate >= firstDayOfMonth) {
-                    totalRevenue += price;
-                    totalProfit += profit;
-                    totalJobs += 1;
+                // All-time stats accumulation
+                totalRevenue += price;
+                totalProfit += profit;
+                totalJobs += 1;
 
-                    // Distance parsing "10 mi" -> 10
-                    if (job.distance) {
-                        const dist = parseFloat(job.distance.toString().replace(/[^\d.]/g, '')) || 0;
-                        totalDistance += dist;
-                    }
-                    // Duration parsing "1 hr 10 mins" -> 70
-                    if (job.duration) {
-                        // Simple parser
-                        let mins = 0;
-                        const h = job.duration.match(/(\d+)\s*h/);
-                        const m = job.duration.match(/(\d+)\s*m/);
-                        if (h) mins += parseInt(h[1]) * 60;
-                        if (m) mins += parseInt(m[1]);
-                        if (!h && !m && !isNaN(parseInt(job.duration))) mins = parseInt(job.duration); // Fallback if just number
-                        totalDurationMins += mins;
-                    }
+                // Distance & Duration
+                if (job.distance) {
+                    const dist = parseFloat(job.distance.toString().replace(/[^\d.]/g, '')) || 0;
+                    totalDistance += dist;
+                }
+                if (job.duration) {
+                    let mins = 0;
+                    const h = job.duration.match(/(\d+)\s*h/);
+                    const m = job.duration.match(/(\d+)\s*m/);
+                    if (h) mins += parseInt(h[1]) * 60;
+                    if (m) mins += parseInt(m[1]);
+                    if (!h && !m && !isNaN(parseInt(job.duration))) mins = parseInt(job.duration);
+                    totalDurationMins += mins;
+                }
+
+                // Trend Calculation Logic (Monthly)
+                if (jobDate >= firstDayOfMonth) {
+                    currentMonthRevenue += price;
                 } else if (jobDate >= firstDayOfLastMonth && jobDate < firstDayOfMonth) {
                     lastMonthRevenue += price;
                 }
+            } else {
+                console.log(`[REV] Excluded Job (Invalid Date): ${job.customerName} | Date: ${job.bookingDate}`);
             }
         });
+        console.log(`[REV] Total Revenue: ${totalRevenue}`);
 
         // Calculate efficiency (Hourly Rate)
         const hourlyRate = totalDurationMins > 0 ? (totalRevenue / (totalDurationMins / 60)) : 0;
 
         // Calculate trends
-        const revenueTrend = lastMonthRevenue > 0 ? ((totalRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+        const revenueTrend = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
         return {
             revenue: { value: totalRevenue, trend: revenueTrend },
@@ -141,8 +143,8 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' = '30d') {
     jobs.forEach((job: any) => {
         let date: Date | undefined;
         if (typeof job.bookingDate === 'string') {
-            const p = parse(job.bookingDate, 'dd/MM/yyyy', new Date());
-            if (isValid(p)) date = p;
+            const p = parseJobDate(job.bookingDate);
+            if (p) date = p;
         } else if (job.bookingDate instanceof Date) {
             date = job.bookingDate;
         }
@@ -213,8 +215,8 @@ export async function getRecentJobs() {
 
     // Client side sort by parsed date
     return jobs.sort((a: any, b: any) => {
-        const dA = parse(a.bookingDate, 'dd/MM/yyyy', new Date());
-        const dB = parse(b.bookingDate, 'dd/MM/yyyy', new Date());
+        const dA = parseJobDate(a.bookingDate) || new Date(0);
+        const dB = parseJobDate(b.bookingDate) || new Date(0);
         return dB.getTime() - dA.getTime();
     }).slice(0, 5).map((j: any) => ({
         ...j,
@@ -235,13 +237,22 @@ export async function getUpcomingJobs() {
     // Sort ascending (nearest future first)
     return jobs
         .filter((j: any) => {
-            const d = parse(`${j.bookingDate} ${j.bookingTime}`, 'dd/MM/yyyy HH:mm', new Date());
+            const datePart = parseJobDate(j.bookingDate);
+            if (!datePart) return false;
+            // Best effort combine with time
+            const d = parse(`${format(datePart, 'yyyy-MM-dd')} ${j.bookingTime}`, 'yyyy-MM-dd HH:mm', new Date());
             return isValid(d) && d >= now;
         })
         .sort((a: any, b: any) => {
-            const dA = parse(`${a.bookingDate} ${a.bookingTime}`, 'dd/MM/yyyy HH:mm', new Date());
-            const dB = parse(`${b.bookingDate} ${b.bookingTime}`, 'dd/MM/yyyy HH:mm', new Date());
-            return dA.getTime() - dB.getTime();
+            const dA = parseJobDate(a.bookingDate) || new Date(0);
+            const dB = parseJobDate(b.bookingDate) || new Date(0);
+            // Verify time sorting too if needed, but date is primary sort
+            if (dA.getTime() !== dB.getTime()) return dA.getTime() - dB.getTime();
+
+            // If same date, try time
+            const timeA = parse(a.bookingTime, 'HH:mm', new Date());
+            const timeB = parse(b.bookingTime, 'HH:mm', new Date());
+            return timeA.getTime() - timeB.getTime();
         })
         .slice(0, 5)
         .map((j: any) => ({ ...j, _id: j._id.toString(), userId: j.userId.toString() }));

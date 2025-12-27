@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { getTripInfo } from '@/ai/flows/get-trip-info';
+import { checkJobOverlap } from '@/app/actions/jobActions';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle, Map, Clock, User, Car, Calendar, Phone, Plane, MessageSquare, BaggageClaim, Baby, CircleDot, Flag, Square, Users, Banknote, Copy } from 'lucide-react';
 import type { MyJob, ProcessedJob } from '@/types';
@@ -43,6 +44,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
     const [tripInfo, setTripInfo] = useState<{ distance: string; duration: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [overlappingJobs, setOverlappingJobs] = useState<any[]>([]);
     const isDesktop = useMediaQuery("(min-width: 768px)");
     const { toast } = useToast();
 
@@ -95,6 +97,35 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
             fetchTripInfo();
         }
     }, [pickup, dropoff, distance, duration, job.id, open]);
+
+    useEffect(() => {
+        const checkOverlap = async () => {
+            if (!open || !job.bookingDate || !job.bookingTime || !job.duration) return;
+
+            try {
+                const dateStr = job.bookingDate instanceof Date
+                    ? format(job.bookingDate, 'dd/MM/yyyy')
+                    : job.bookingDate;
+
+                const result = await checkJobOverlap(
+                    dateStr,
+                    job.bookingTime,
+                    job.duration,
+                    (job as any)._id || (job as any).id
+                );
+
+                if (result.overlapping) {
+                    setOverlappingJobs(result.jobs);
+                } else {
+                    setOverlappingJobs([]);
+                }
+            } catch (error) {
+                console.error("Error checking overlap:", error);
+            }
+        };
+
+        checkOverlap();
+    }, [job.bookingDate, job.bookingTime, job.duration, job.id, open, (job as any)._id]);
 
     const customerName = (job as MyJob).customerName;
     const customerPhone = (job as MyJob).customerPhone;
@@ -173,6 +204,50 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto">
+                    {overlappingJobs.length > 0 && (
+                        <div className="px-6 pt-6 pb-2">
+                            <Alert variant="default" className="border-orange-500 bg-orange-50 dark:bg-orange-950/30">
+                                <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
+                                <div className="flex-1">
+                                    <AlertTitle className="text-orange-800 dark:text-orange-200 mb-1">Time Conflict Warning</AlertTitle>
+                                    <AlertDescription className="text-orange-700 dark:text-orange-300">
+                                        This job overlaps with {overlappingJobs.length} other job{overlappingJobs.length > 1 ? 's' : ''}.
+                                        <div className="mt-3 space-y-3">
+                                            {overlappingJobs.map((overlapJob: any, i: number) => (
+                                                <div key={i} className="bg-background/95 backdrop-blur-sm p-4 rounded-lg border shadow-sm text-sm dark:bg-card/50">
+                                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                                                        <div>
+                                                            <div className="font-semibold text-foreground flex items-center gap-2">
+                                                                {overlapJob.customerName || 'Unknown Customer'}
+                                                                <span className="text-xs font-normal text-muted-foreground px-1.5 py-0.5 bg-muted rounded-md border">
+                                                                    {overlapJob.jobRef || 'No Ref'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 px-2.5 py-1 rounded-full w-fit">
+                                                            <Clock className="w-3 h-3" />
+                                                            {overlapJob.bookingTime} ({overlapJob.duration})
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-md border border-border/50">
+                                                        <div className="flex items-start gap-2">
+                                                            <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                                                            <span className="truncate leading-tight text-foreground/80">{overlapJob.pickup}</span>
+                                                        </div>
+                                                        <div className="flex items-start gap-2">
+                                                            <div className="mt-0.5 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                                                            <span className="truncate leading-tight text-foreground/80">{overlapJob.dropoff}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </AlertDescription>
+                                </div>
+                            </Alert>
+                        </div>
+                    )}
                     <Tabs defaultValue="details" className="w-full">
                         <div className="px-6 pt-4">
                             <TabsList className="grid w-full grid-cols-3">
