@@ -290,16 +290,20 @@ export async function getUpcomingJobs() {
 
 import { categorizeTimeOfDay } from "@/lib/time-utils";
 
-export async function getVehicleStats() {
+export async function getVehicleStats(dateFrom?: Date, dateTo?: Date) {
     const session = await auth();
     if (!session?.user?.id) return [];
     await dbConnect();
 
     try {
-        const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('vehicle price').lean();
+        const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('vehicle price bookingDate').lean();
         const map = new Map<string, { jobs: number, revenue: number }>();
 
         jobs.forEach((j: any) => {
+            const d = parseJobDate(j.bookingDate);
+            if (dateFrom && (!d || d < startOfDay(dateFrom))) return;
+            if (dateTo && (!d || d > endOfDay(dateTo))) return;
+
             const v = j.vehicle || 'Unknown';
             const price = (typeof j.fare === 'number' ? j.fare : 0) || (typeof j.parsedPrice === 'number' ? j.parsedPrice : 0) || (typeof j.price === 'number' ? j.price : parsePrice(j.price));
 
