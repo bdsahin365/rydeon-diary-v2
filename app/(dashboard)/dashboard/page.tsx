@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { DownloadReportButton } from "@/components/dashboard/download-report-button";
 import { startOfMonth, endOfMonth } from "date-fns";
 
 export default async function Dashboard({
@@ -92,10 +93,11 @@ export default async function Dashboard({
             initialDateTo={defaultDateTo}
             className="h-9 flex-1 sm:w-auto"
           />
-          <Button className="h-9">
-            <Download className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Download Report</span>
-          </Button>
+          <DownloadReportButton
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            className="h-9"
+          />
         </div>
       </div>
       <Tabs defaultValue="overview" className="space-y-4">
