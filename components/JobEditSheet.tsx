@@ -28,6 +28,7 @@ import { VehicleSelector } from '@/components/vehicle-selector';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { createJob, checkJobOverlap } from '@/app/actions/jobActions';
 import { createVehicleType, getVehicleTypes } from '@/app/actions/vehicleTypeActions';
+import { calculateJobProfit } from '@/lib/profit-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ResponsiveSelect } from '@/components/responsive-select';
 import { ResponsiveDatePicker } from '@/components/responsive-date-picker';
@@ -253,6 +254,27 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
             if (payload.dropoff) {
                 const pt = await geocodeAddress(payload.dropoff);
                 if (pt) payload.dropoffPoint = pt;
+            }
+
+            // Calculate profit before saving
+            const profitResult = calculateJobProfit(
+                { ...payload, fare: payload.fare || payload.parsedPrice || 0 } as any,
+                tripInfo.distance,
+                tripInfo.duration,
+                {
+                    ...settings,
+                    operatorFee: settings.operatorFee,
+                    fuelPrice: settings.fuelPrice,
+                    fuelEfficiency: settings.fuelEfficiency,
+                    maintenanceCost: settings.maintenanceCost,
+                    airportFee: settings.airportFee,
+                    targetProfit: settings.targetProfit
+                },
+                selectedOperator
+            );
+
+            if (profitResult) {
+                payload.profit = profitResult.totalProfit;
             }
 
             // Use createJob for new jobs, updateJob for existing

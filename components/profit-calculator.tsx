@@ -10,6 +10,7 @@ import { isAirportJob, parsePrice } from '@/lib/utils';
 import type { ProcessedJob } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { calculateJobProfit } from '@/lib/profit-utils';
 
 
 type ProfitCalculatorProps = {
@@ -20,11 +21,7 @@ type ProfitCalculatorProps = {
 
 const LITRE_PER_GALLON = 4.546;
 
-const parseValue = (text: string): number => {
-    if (!text) return 0;
-    const match = text.match(/[\d.]+/);
-    return match ? parseFloat(match[0]) : 0;
-}
+
 
 export function ProfitCalculator({ job, distance: distanceStr, duration: durationStr }: ProfitCalculatorProps) {
     const { settings } = useSettings();
@@ -52,74 +49,21 @@ export function ProfitCalculator({ job, distance: distanceStr, duration: duratio
     }, [job.operator]);
 
     const calculations = useMemo(() => {
-        const distance = parseValue(distanceStr); // in miles
-        const fare = ((job as MyJob)?.fare ?? job.parsedPrice ?? parsePrice(job.price || '')) || 0;
-
-        const durationMinutes = (() => {
-            if (!durationStr) return 0;
-            let totalMinutes = 0;
-            const hourMatch = durationStr.match(/(\d+)\s*hour/);
-            const minMatch = durationStr.match(/(\d+)\s*min/);
-            if (hourMatch) totalMinutes += parseInt(hourMatch[1]) * 60;
-            if (minMatch) totalMinutes += parseInt(minMatch[1]);
-            if (!hourMatch && !minMatch && /^\d+$/.test(durationStr.trim())) {
-                return parseValue(durationStr);
-            }
-            if (totalMinutes === 0 && !/^\d+$/.test(durationStr.trim())) {
-                return 0;
-            }
-            return totalMinutes;
-        })();
-
-
-        if (fare === 0) {
-            return null;
-        }
-
-        // Handle zero distance case - use minimum distance for calculation
-        const effectiveDistance = distance === 0 ? 0.1 : distance;
-
-        const commissionRate = (job as MyJob).operatorFee ?? (operatorDetails?.chargesCommission ? (operatorDetails.commissionRate ?? 0) : settings.operatorFee);
-        const operatorFeeAmount = fare * (commissionRate / 100);
-
-        const fuelPricePerGallon = settings.fuelPrice * LITRE_PER_GALLON;
-        const totalFuelCost = (effectiveDistance / settings.fuelEfficiency) * fuelPricePerGallon;
-        const totalMaintenanceCost = effectiveDistance * settings.maintenanceCost;
-
-        const airportFee = (job as MyJob).includeAirportFee ? ((job as MyJob).airportFee ?? settings.airportFee) : 0;
-
-        const totalTripCost = totalFuelCost + totalMaintenanceCost + airportFee + operatorFeeAmount;
-
-        const totalProfit = fare - totalTripCost;
-
-        const profitPerMile = effectiveDistance > 0 ? totalProfit / effectiveDistance : 0;
-
-        const hourlyRate = durationMinutes > 0 ? (totalProfit / durationMinutes) * 60 : 0;
-
-        const minuteRate = durationMinutes > 0 ? totalProfit / durationMinutes : 0;
-
-        const mileRate = distance > 0 ? fare / distance : 0;
-
-        const worthIt = profitPerMile >= settings.targetProfit;
-
-        return {
-            fare,
-            distance,
-            effectiveDistance,
-            duration: durationMinutes,
-            totalFuelCost,
-            totalMaintenanceCost,
-            profitPerMile,
-            totalTripCost,
-            totalProfit,
-            hourlyRate,
-            minuteRate,
-            mileRate,
-            worthIt,
-            commissionRate,
-            operatorFeeAmount,
-            airportFee,
-        };
+        return calculateJobProfit(
+            job,
+            distanceStr,
+            durationStr,
+            {
+                ...settings,
+                operatorFee: settings.operatorFee,
+                fuelPrice: settings.fuelPrice,
+                fuelEfficiency: settings.fuelEfficiency,
+                maintenanceCost: settings.maintenanceCost,
+                airportFee: settings.airportFee,
+                targetProfit: settings.targetProfit
+            },
+            operatorDetails
+        );
     }, [distanceStr, durationStr, job, settings, operatorDetails]);
 
     if (!calculations) {
