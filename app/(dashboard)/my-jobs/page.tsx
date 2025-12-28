@@ -145,7 +145,7 @@ export default async function MyJobsPage({
 
             {/* Jobs Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {sortedJobs.length === 0 ? (
+                {jobs.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-lg bg-muted/10">
                         <div className="bg-muted p-4 rounded-full mb-4">
                             <ClipboardList className="h-8 w-8 text-muted-foreground" />
@@ -162,7 +162,7 @@ export default async function MyJobsPage({
                         </Button>
                     </div>
                 ) : (
-                    sortedJobs.map((job: Job) => {
+                    jobs.map((job: Job) => {
                         const jId = job._id || job.id;
                         let highlightStatus: 'active' | 'next' | undefined;
 
