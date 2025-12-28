@@ -8,6 +8,7 @@ import { getJobs, getJobCounts, getUniqueOperators } from "@/app/actions/jobActi
 import { JobFilters } from "@/components/JobFilters";
 import { PaymentStatusFilter } from "@/components/PaymentStatusFilter";
 import { TimeOfDayFilter } from "@/components/TimeOfDayFilter";
+import { getLondonTime, parseLondonDateTime } from "@/lib/time-utils";
 
 export default async function MyJobsPage({
     searchParams,
@@ -28,7 +29,7 @@ export default async function MyJobsPage({
     const uniqueOperators = await getUniqueOperators();
 
     // Logic to identify Current and Next jobs
-    const now = new Date();
+    const now = getLondonTime();
     let activeJobId: string | undefined;
     let nextJobId: string | undefined;
 
@@ -80,37 +81,7 @@ export default async function MyJobsPage({
         }
     }
 
-    // Re-sort jobs to prioritize Active > Future (Ascending) > Past (Descending)
-    const sortedJobs = [...jobs].sort((a: any, b: any) => {
-        const rangeA = getJobDates(a);
-        const rangeB = getJobDates(b);
 
-        // If date parsing fails, push to end
-        if (!rangeA) return 1;
-        if (!rangeB) return -1;
-
-        // 1. Active job always first
-        const isActiveA = (now >= rangeA.startDate && now <= rangeA.endDate);
-        const isActiveB = (now >= rangeB.startDate && now <= rangeB.endDate);
-        if (isActiveA && !isActiveB) return -1;
-        if (!isActiveA && isActiveB) return 1;
-
-        // 2. Future jobs before Past jobs
-        const isFutureA = rangeA.startDate > now;
-        const isFutureB = rangeB.startDate > now;
-
-        // If one is future and one is past
-        if (isFutureA && !isFutureB) return -1;
-        if (!isFutureA && isFutureB) return 1;
-
-        // 3. Both Future: Ascending (Nearest first)
-        if (isFutureA && isFutureB) {
-            return rangeA.startDate.getTime() - rangeB.startDate.getTime();
-        }
-
-        // 4. Both Past: Descending (Most recent past first)
-        return rangeB.startDate.getTime() - rangeA.startDate.getTime();
-    });
 
     return (
         <div className="space-y-6">
