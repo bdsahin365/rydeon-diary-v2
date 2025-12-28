@@ -161,12 +161,7 @@ export async function getJobs(
         }
 
         // Fetch all matching jobs first
-        let jobs;
-        if (filter === 'scheduled') {
-            jobs = await Job.find(query).sort({ bookingDate: 1, bookingTime: 1 }).lean();
-        } else {
-            jobs = await Job.find(query).sort({ createdAt: -1 }).lean();
-        }
+        let jobs = await Job.find(query).lean();
 
         // Filter by date range if provided
         if (dateFrom && dateTo) {
@@ -226,6 +221,38 @@ export async function getJobs(
                 );
             });
         }
+
+        // Sort jobs by date/time
+        jobs.sort((a: any, b: any) => {
+            const getDate = (job: any) => {
+                if (!job.bookingDate) return 0;
+                try {
+                    const date = parse(job.bookingDate, 'dd/MM/yyyy', new Date());
+                    if (!isValid(date)) return 0;
+
+                    if (job.bookingTime) {
+                        const [h, m] = job.bookingTime.split(':').map((n: string) => parseInt(n) || 0);
+                        date.setHours(h, m, 0, 0);
+                    }
+                    return date.getTime();
+                } catch {
+                    return 0;
+                }
+            };
+
+            const timeA = getDate(a);
+            const timeB = getDate(b);
+
+            // Sort 'scheduled' jobs and default 'all' view by upcoming date (Ascending)
+            // But usually 'all' might contain history. 
+            // Given the user request "upcoming first", they likely want to see near future.
+
+            if (filter === 'scheduled') {
+                return timeA - timeB;
+            }
+            // For other views (completed, etc), usually most recent is better
+            return timeB - timeA;
+        });
 
         return JSON.parse(JSON.stringify(jobs));
     } catch (error) {

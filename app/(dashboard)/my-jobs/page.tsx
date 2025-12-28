@@ -27,6 +27,91 @@ export default async function MyJobsPage({
     const jobCounts = await getJobCounts();
     const uniqueOperators = await getUniqueOperators();
 
+    // Logic to identify Current and Next jobs
+    const now = new Date();
+    let activeJobId: string | undefined;
+    let nextJobId: string | undefined;
+
+    // Helper: Parse duration string "24 mins", "1 hr 15 mins"
+    const parseDurationMinutes = (str?: string) => {
+        if (!str) return 0;
+        let total = 0;
+        const h = str.match(/(\d+)\s*h/i);
+        const m = str.match(/(\d+)\s*m/i);
+        if (h) total += parseInt(h[1]) * 60;
+        if (m) total += parseInt(m[1]);
+        return total;
+    };
+
+    // Helper: Get Date object from job
+    const getJobDates = (job: any) => {
+        if (!job.bookingDate || !job.bookingTime) return null;
+        try {
+            // job.bookingDate is DD/MM/YYYY
+            const [d, m, y] = job.bookingDate.split('/').map(Number);
+            const [hours, minutes] = job.bookingTime.split(':').map(Number);
+
+            const startDate = new Date(y, m - 1, d, hours, minutes);
+            const durationMins = parseDurationMinutes(job.duration);
+            const endDate = new Date(startDate.getTime() + durationMins * 60000);
+
+            return { startDate, endDate };
+        } catch (e) {
+            return null;
+        }
+    };
+
+    for (const job of jobs) {
+        if (job.status === 'cancelled' || job.status === 'archived') continue;
+
+        const range = getJobDates(job);
+        if (!range) continue;
+
+        // Check for Active (Current)
+        if (now >= range.startDate && now <= range.endDate) {
+            activeJobId = job._id || job.id;
+        }
+
+        // Check for Next (First future job)
+        // Since jobs are sorted by date ascending, the first one we find > now is the next one.
+        // We only set it if we haven't found one yet.
+        if (!nextJobId && range.startDate > now) {
+            nextJobId = job._id || job.id;
+        }
+    }
+
+    // Re-sort jobs to prioritize Active > Future (Ascending) > Past (Descending)
+    const sortedJobs = [...jobs].sort((a: any, b: any) => {
+        const rangeA = getJobDates(a);
+        const rangeB = getJobDates(b);
+
+        // If date parsing fails, push to end
+        if (!rangeA) return 1;
+        if (!rangeB) return -1;
+
+        // 1. Active job always first
+        const isActiveA = (now >= rangeA.startDate && now <= rangeA.endDate);
+        const isActiveB = (now >= rangeB.startDate && now <= rangeB.endDate);
+        if (isActiveA && !isActiveB) return -1;
+        if (!isActiveA && isActiveB) return 1;
+
+        // 2. Future jobs before Past jobs
+        const isFutureA = rangeA.startDate > now;
+        const isFutureB = rangeB.startDate > now;
+
+        // If one is future and one is past
+        if (isFutureA && !isFutureB) return -1;
+        if (!isFutureA && isFutureB) return 1;
+
+        // 3. Both Future: Ascending (Nearest first)
+        if (isFutureA && isFutureB) {
+            return rangeA.startDate.getTime() - rangeB.startDate.getTime();
+        }
+
+        // 4. Both Past: Descending (Most recent past first)
+        return rangeB.startDate.getTime() - rangeA.startDate.getTime();
+    });
+
     return (
         <div className="space-y-6">
             {/* Header Section */}
@@ -60,7 +145,7 @@ export default async function MyJobsPage({
 
             {/* Jobs Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {jobs.length === 0 ? (
+                {sortedJobs.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-lg bg-muted/10">
                         <div className="bg-muted p-4 rounded-full mb-4">
                             <ClipboardList className="h-8 w-8 text-muted-foreground" />
@@ -77,9 +162,21 @@ export default async function MyJobsPage({
                         </Button>
                     </div>
                 ) : (
-                    jobs.map((job: Job) => (
-                        <JobCard key={job._id || job.id} job={job} />
-                    ))
+                    sortedJobs.map((job: Job) => {
+                        const jId = job._id || job.id;
+                        let highlightStatus: 'active' | 'next' | undefined;
+
+                        if (jId === activeJobId) highlightStatus = 'active';
+                        else if (jId === nextJobId) highlightStatus = 'next';
+
+                        return (
+                            <JobCard
+                                key={jId}
+                                job={job}
+                                highlightStatus={highlightStatus}
+                            />
+                        );
+                    })
                 )}
             </div>
         </div>

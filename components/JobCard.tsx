@@ -78,6 +78,7 @@ interface JobCardProps {
     onEdit?: (job: Job) => void;
     onDelete?: (job: Job) => void;
     onArchive?: (job: Job) => void;
+    highlightStatus?: 'active' | 'next' | undefined;
 }
 
 const FlightLandingIcon = ({ className }: { className?: string }) => (
@@ -92,7 +93,7 @@ const FlightTakeoffIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
+export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: JobCardProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -309,10 +310,24 @@ export function JobCard({ job, onEdit, onDelete, onArchive }: JobCardProps) {
     return (
         <>
             <Card
-                className="bg-card text-card-foreground rounded-xl border py-2 sm:py-3 group border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer"
+                className={`
+                    bg-card text-card-foreground rounded-xl border group border-border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer
+                    ${highlightStatus === 'active' ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/5' :
+                        highlightStatus === 'next' ? 'border-sky-400 border-l-4' : 'hover:border-primary/50'}
+                `}
                 onClick={() => setDetailsSheetOpen(true)}
             >
-                <CardContent className="px-3 sm:px-5 py-0">
+                <CardContent className="px-3 sm:px-5 py-2 sm:py-3">
+                    {/* Active/Next Badge */}
+                    {highlightStatus && (
+                        <div className={`
+                            text-[10px] uppercase font-bold tracking-wider mb-2
+                            ${highlightStatus === 'active' ? 'text-blue-600' : 'text-sky-600'}
+                        `}>
+                            {highlightStatus === 'active' ? 'Current Job' : 'Next Up'}
+                        </div>
+                    )}
+
                     {/* Card Header */}
                     <div className="flex justify-between items-start mb-1 sm:mb-2">
                         <div className="flex flex-col gap-0.5 min-w-0">
