@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import type { ProcessedJob, Operator, MyJob, PassengerDetails, LuggageDetails, ChildSeatDetails } from '@/types';
+import type { ProcessedJob, Operator, MyJob, PassengerDetails, LuggageDetails, ChildSeatDetails, Expense } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose, SheetDescription } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { OperatorCombobox } from '@/components/operator-combobox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Save, Info, Car, Wallet, Plus, Minus, User, Baby, Plane, Briefcase, PlusCircle, XCircle, CircleDot, Flag, Square } from 'lucide-react';
+import { Calendar as CalendarIcon, Save, Info, Car, Wallet, Plus, Minus, User, Baby, Plane, Briefcase, PlusCircle, XCircle, CircleDot, Flag, Square, Receipt, Clock } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { TimePicker } from '@/components/time-picker';
 import { format, parse } from 'date-fns';
@@ -59,6 +59,8 @@ const EMPTY_JOB: Partial<ProcessedJob> = {
     includeAirportFee: false,
     distance: '',
     duration: '',
+    noShowWaitTime: 0,
+    expenses: [],
 }
 
 function NumberStepper({ value, onChange, min = 0, max = 10 }: { value: number; onChange: (newValue: number) => void; min?: number, max?: number }) {
@@ -538,6 +540,19 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                                 <Label>Additional note</Label>
                                 <Textarea value={editState.notes || ''} onChange={(e) => handleValueChange('notes', e.target.value)} />
                             </div>
+                            {!!(editState as MyJob).noShowAt && (
+                                <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                    <Label className="flex items-center gap-2">
+                                        <Clock className="h-4 w-4" /> Wait Time (minutes)
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        value={(editState as MyJob).noShowWaitTime || ''}
+                                        onChange={(e) => handleValueChange('noShowWaitTime', parseFloat(e.target.value))}
+                                        placeholder="e.g. 30"
+                                    />
+                                </div>
+                            )}
                             <div className="space-y-1">
                                 <Label>Flight Number</Label>
                                 <div className="flex items-center gap-2">

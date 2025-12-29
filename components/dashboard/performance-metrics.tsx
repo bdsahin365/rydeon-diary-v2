@@ -15,9 +15,16 @@ interface PerformanceMetricsProps {
     vehicleStats: { name: string; jobs: number; revenue: number }[];
     statusCounts?: Record<string, { count: number; value: number }>;
     paymentCounts?: Record<string, { count: number; value: number }>;
+    costs?: {
+        profit: number;
+        operatorFees: number;
+        airportFees: number;
+        fuel: number;
+        maintenance: number;
+    };
 }
 
-export function PerformanceMetrics({ stats, vehicleStats, statusCounts, paymentCounts }: PerformanceMetricsProps) {
+export function PerformanceMetrics({ stats, vehicleStats, statusCounts, paymentCounts, costs }: PerformanceMetricsProps) {
     const avgJobPrice = stats.jobs.value > 0 ? stats.revenue.value / stats.jobs.value : 0;
     const profitMargin = stats.revenue.value > 0 ? (stats.profit.value / stats.revenue.value) * 100 : 0;
 
@@ -32,6 +39,8 @@ export function PerformanceMetrics({ stats, vehicleStats, statusCounts, paymentC
     } else if (stats.jobs.value > 0) {
         completionRate = 100;
     }
+
+    const totalCost = costs ? (costs.operatorFees + costs.airportFees + costs.fuel + costs.maintenance) : 0;
 
     const topVehicles = vehicleStats.slice(0, 3);
 
@@ -69,6 +78,12 @@ export function PerformanceMetrics({ stats, vehicleStats, statusCounts, paymentC
                             <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
                             <div className="text-2xl font-bold flex items-center">
                                 {completionRate.toFixed(0)}%
+                            </div>
+                        </div>
+                        <div className="col-span-2 space-y-1 border-t pt-4 mt-2">
+                            <p className="text-sm font-medium text-muted-foreground">Total Operational Cost</p>
+                            <div className="text-2xl font-bold flex items-center text-red-500">
+                                {formatPrice(totalCost)}
                             </div>
                         </div>
                     </div>

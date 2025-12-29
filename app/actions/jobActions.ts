@@ -154,8 +154,17 @@ export async function getJobs(
     await dbConnect();
     try {
         let query: any = { userId: session.user.id };
+        // Apply filter
         if (filter && filter !== 'all') {
-            query.status = filter;
+            if (filter === 'no_show') {
+                query.noShowAt = { $exists: true, $ne: null };
+            } else if (filter === 'cancelled') {
+                query.status = 'cancelled';
+                // Exclude no-shows (must not exist or be null)
+                query.$or = [{ noShowAt: { $exists: false } }, { noShowAt: null }];
+            } else {
+                query.status = filter;
+            }
         } else {
             query.status = { $ne: 'archived' };
         }
@@ -203,7 +212,11 @@ export async function getJobs(
 
         // Filter by operator if provided
         if (operator && operator !== 'all') {
-            jobs = jobs.filter((job: any) => job.operator === operator);
+            if (operator === 'Unknown') {
+                jobs = jobs.filter((job: any) => !job.operator || job.operator.trim() === '');
+            } else {
+                jobs = jobs.filter((job: any) => job.operator === operator);
+            }
         }
 
         // Filter by search query if provided
@@ -269,37 +282,46 @@ export async function getJobCounts() {
             scheduled: 0,
             completed: 0,
             cancelled: 0,
-            archived: 0
+            archived: 0,
+            no_show: 0
         };
     }
     await dbConnect();
 
     try {
-        const counts = await Job.aggregate([
-            { $match: { userId: session.user.id } },
-            { $group: { _id: "$status", count: { $sum: 1 } } }
-        ]);
+        // Fetch all jobs for the user to perform custom counting logic
+        const jobs = await Job.find({ userId: session.user.id }).lean();
 
         const result = {
             all: 0,
             scheduled: 0,
             completed: 0,
             cancelled: 0,
-            archived: 0
+            archived: 0,
+            no_show: 0
         };
 
-        let allCount = 0;
-        counts.forEach((item: any) => {
-            const status = item._id || 'unknown';
-            if (status !== 'archived') {
-                allCount += item.count;
+        jobs.forEach((job: any) => {
+            // Increment 'all' count for non-archived jobs
+            if (job.status !== 'archived') {
+                result.all++;
             }
-            if (Object.prototype.hasOwnProperty.call(result, status)) {
-                (result as any)[status] = item.count;
+
+            // Apply custom counting logic for specific statuses
+            if (job.status === 'completed') {
+                result.completed++;
+            } else if (job.noShowAt) { // Check for noShowAt first to make it mutually exclusive with cancelled
+                result.no_show++;
+            } else if (job.status === 'cancelled') {
+                result.cancelled++;
+            } else if (job.status === 'scheduled') {
+                result.scheduled++;
+            } else if (job.status === 'archived') {
+                result.archived++;
             }
+            // Other statuses (e.g., 'pending') would fall through if not explicitly handled
         });
 
-        result.all = allCount;
         return result;
     } catch (error) {
         console.error("Error fetching job counts:", error);
@@ -320,14 +342,19 @@ export async function getUniqueOperators() {
     await dbConnect();
     try {
         const operators = await Job.distinct('operator', {
-            userId: session.user.id,
-            operator: { $ne: null }
+            userId: session.user.id
         });
 
-        // Filter out empty strings and sort
-        return operators
+        const validOperators = operators
             .filter(op => op && op.trim() !== '')
             .sort((a, b) => a.localeCompare(b));
+
+        const hasUnknown = operators.some(op => !op || op.trim() === '');
+        if (hasUnknown) {
+            validOperators.push('Unknown');
+        }
+
+        return validOperators;
     } catch (error) {
         console.error("Error fetching unique operators:", error);
         return [];

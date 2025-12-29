@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 
@@ -21,7 +21,7 @@ export function Overview({ data }: OverviewProps) {
                 <div className="h-[350px] w-full">
                     {hasData ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data}>
+                            <BarChart data={data} margin={{ top: 20, right: 20, left: -20, bottom: 5 }}>
                                 <XAxis
                                     dataKey="name"
                                     stroke="#888888"
@@ -36,11 +36,35 @@ export function Overview({ data }: OverviewProps) {
                                     axisLine={false}
                                     tickFormatter={(value) => `£${value}`}
                                 />
+                                <Tooltip
+                                    cursor={{ fill: 'transparent', opacity: 0.1 }}
+                                    content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className="rounded-lg border bg-popover p-3 shadow-lg ring-1 ring-black/5">
+                                                    <div className="mb-1 text-xs text-muted-foreground font-medium">
+                                                        {label}
+                                                    </div>
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-xl font-bold text-popover-foreground">
+                                                            £{Number(payload[0].value).toFixed(2)}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                                                            Revenue
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                />
                                 <Bar
                                     dataKey="revenue"
                                     fill="currentColor"
                                     radius={[4, 4, 0, 0]}
                                     className="fill-primary"
+                                    barSize={40} // Consistent bar size
                                 />
                             </BarChart>
                         </ResponsiveContainer>

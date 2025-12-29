@@ -10,6 +10,7 @@ export interface IJob extends Document {
     vehicle: string;
     price?: string | number;
     fare?: number;
+    originalFare?: number;
     distance: string;
     duration?: string;
     notes?: string;
@@ -26,6 +27,15 @@ export interface IJob extends Document {
     date?: string;
     userId: string;
     timeOfDay?: 'midnight' | 'day' | 'evening';
+    noShowWaitTime?: number;
+    noShowAt?: Date | string;
+    expenses?: Array<{
+        type: string;
+        amount: number;
+        paidByDriver: boolean;
+        refundStatus: string;
+        description?: string;
+    }>;
 }
 
 const JobSchema: Schema = new Schema({
@@ -38,6 +48,7 @@ const JobSchema: Schema = new Schema({
     vehicle: { type: String },
     price: { type: Schema.Types.Mixed },
     fare: { type: Number },
+    originalFare: { type: Number },
     distance: { type: String },
     duration: { type: String },
     notes: { type: String },
@@ -54,6 +65,15 @@ const JobSchema: Schema = new Schema({
     date: { type: String }, // Legacy
     userId: { type: String, required: true, index: true },
     timeOfDay: { type: String, enum: ['midnight', 'day', 'evening'], index: true },
+    noShowWaitTime: { type: Number },
+    noShowAt: { type: Date },
+    expenses: [{
+        type: { type: String },
+        amount: { type: Number },
+        paidByDriver: { type: Boolean },
+        refundStatus: { type: String },
+        description: { type: String }
+    }]
 }, {
     timestamps: true,
     collection: 'my_jobs',

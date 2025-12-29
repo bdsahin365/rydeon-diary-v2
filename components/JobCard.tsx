@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,8 @@ import {
     CreditCard,
     CheckCircle,
     XCircle,
+    AlertCircle,
+    Undo2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -28,8 +31,9 @@ import { useRouter } from "next/navigation";
 import { JobEditSheet } from "@/components/JobEditSheet";
 import { JobDetailsSheet } from "@/components/JobDetailsSheet";
 import { PaymentStatusDialog } from "@/components/PaymentStatusDialog";
+import { NoShowDialog } from "@/components/NoShowDialog";
 import { ProcessedJob, PaymentStatus, MyJob } from "@/types";
-import { useState } from "react";
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -71,6 +75,13 @@ export interface Job {
     };
     name?: string; // Optional legacy field
     date?: string; // Optional legacy field
+    noShowAt?: string | Date;
+    noShowWaitTime?: number;
+    expenses?: any[];
+    originalFare?: number;
+    operatorFee?: number;
+    airportFee?: number;
+    includeAirportFee?: boolean;
 }
 
 interface JobCardProps {
@@ -99,12 +110,49 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
     const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
-    const isPickupAirport = job.pickup?.toLowerCase().includes('airport') || false;
-    const isDropoffAirport = job.dropoff?.toLowerCase().includes('airport') || false;
+    const [noShowDialogOpen, setNoShowDialogOpen] = useState(false);
+
+    // Optimistic UI State
+    const [localJob, setLocalJob] = useState(job);
+
+    // Sync local job with prop updates from server
+    useEffect(() => {
+        setLocalJob(job);
+    }, [job]);
+
+    const isPickupAirport = localJob.pickup?.toLowerCase().includes('airport') || localJob.pickup?.toLowerCase().includes('terminal');
+    const isDropoffAirport = localJob.dropoff?.toLowerCase().includes('airport') || localJob.dropoff?.toLowerCase().includes('terminal');
 
     // Data mapping logic
-    const displayName = job.customerName || job.operator || "N/A";
-    const displayStatus = job.status || "N/A";
+    const displayName = localJob.customerName || localJob.operator || "N/A";
+    const displayStatus = localJob.status || "N/A";
+
+    const canMarkNoShow = () => {
+        if (job.noShowAt) return false; // Already marked
+        if (job.status !== 'scheduled' && job.status !== 'cancelled') return false;
+        if (!job.bookingDate || !job.bookingTime) return false;
+
+        try {
+            // Parse job date/time (Assuming DD/MM/YYYY)
+            // Note: In client, we might need a robust parser.
+            // Let's simple-parse for now matching `app/actions/jobActions.ts` or `time-utils`.
+            // format: DD/MM/YYYY and HH:MM
+            const [d, m, y] = job.bookingDate.split('/').map(Number);
+            const [h, min] = job.bookingTime.split(':').map(Number);
+            const jobDate = new Date(y, m - 1, d, h, min);
+
+            // Add 15 minutes grace period
+            const gracePeriodEnds = new Date(jobDate.getTime() + 15 * 60000);
+
+            // Compare with current time
+            const now = new Date();
+
+            return now > gracePeriodEnds;
+        } catch (e) {
+            console.error("Error checking No Show eligibility", e);
+            return false;
+        }
+    };
 
     // Convert 24-hour time to 12-hour format
     const formatTime12Hour = (time24: string) => {
@@ -117,46 +165,45 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     };
 
     let displayDate = "N/A";
-    if (job.bookingDate && job.bookingTime) {
-        displayDate = `${job.bookingDate} at ${formatTime12Hour(job.bookingTime)}`;
-    } else if (job.date) {
-        displayDate = job.date;
-    } else if (job.bookedAt) {
-        displayDate = job.bookedAt;
+    if (localJob.bookingDate && localJob.bookingTime) {
+        displayDate = `${localJob.bookingDate} at ${formatTime12Hour(localJob.bookingTime)}`;
+    } else if (localJob.date) {
+        displayDate = localJob.date;
+    } else if (localJob.bookedAt) {
+        displayDate = localJob.bookedAt;
     }
 
-    // Parse price (e.g., "£55 NET" -> 55)
     // Parse price (e.g., "£55 NET" -> 55)
     let priceValue = 0;
     let parsedPrice = 0;
 
-    if (job.price) {
-        const priceString = job.price.toString();
+    if (localJob.price) {
+        const priceString = localJob.price.toString();
         parsedPrice = parseFloat(priceString.replace(/[^\d.]/g, '')) || 0;
     }
 
     if (parsedPrice > 0) {
         priceValue = parsedPrice;
-    } else if (job.fare) {
-        priceValue = job.fare;
+    } else if (localJob.fare) {
+        priceValue = localJob.fare;
     }
 
     // Profit calculation (mock logic for now, or 0 if not available)
-    const profitValue = job.profit || 0;
+    const profitValue = localJob.profit || 0;
 
     // Payment Status
-    const paymentStatus = job.paymentStatus?.toLowerCase() || (job.isPaid ? 'paid' : 'unpaid');
+    const paymentStatus = localJob.paymentStatus?.toLowerCase() || (localJob.isPaid ? 'paid' : 'unpaid');
     const isPaid = paymentStatus === 'paid';
     const isOverdue = paymentStatus === 'overdue';
 
-    const pickupLocation = job.pickup || "N/A";
-    const dropoffLocation = job.dropoff || "N/A";
-    const vehicleType = job.vehicle || "N/A";
-    const distance = job.distance || "N/A";
+    const pickupLocation = localJob.pickup || "N/A";
+    const dropoffLocation = localJob.dropoff || "N/A";
+    const vehicleType = localJob.vehicle || "N/A";
+    const distance = localJob.distance || "N/A";
     const isAirportJob = isPickupAirport || isDropoffAirport;
 
     const handleSaveJob = async (updatedJob: Partial<ProcessedJob>) => {
-        if (!job._id) return;
+        if (!localJob._id) return;
         try {
             // Convert ProcessedJob to IJob format
             const jobUpdate: any = { ...updatedJob };
@@ -224,12 +271,83 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     const handleStatusChange = async (newStatus: string) => {
         if (!job._id) return;
         try {
-            const result = await updateJob(job._id, { status: newStatus } as any);
+            const updates: any = { status: newStatus };
+            // If moving to scheduled or completed, clear no show flag
+            if (newStatus === 'scheduled' || newStatus === 'completed') {
+                updates.noShowAt = null;
+                updates.noShowWaitTime = null;
+            }
+
+            const result = await updateJob(job._id, updates);
             if (result.success) {
                 toast({ title: "Status Updated", description: `Job marked as ${newStatus}.` });
                 router.refresh();
             } else {
                 toast({ variant: "destructive", title: "Error", description: result.error || `Failed to mark as ${newStatus}.` });
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred." });
+        }
+    };
+
+    const handleRevertNoShow = async () => {
+        if (!job._id) return;
+        try {
+            const updatePayload: any = {
+                noShowAt: null,
+                noShowWaitTime: null,
+                status: 'cancelled', // Revert to standard cancelled
+                expenses: [] // Clear no-show expenses
+            };
+
+            // Restore original fare if available
+            // Restore original fare if available
+            if (localJob.originalFare !== undefined && localJob.originalFare !== null) {
+                const restoredFare = localJob.originalFare;
+                updatePayload.fare = restoredFare;
+                updatePayload.price = `£${restoredFare.toFixed(2)}`;
+                updatePayload.originalFare = null; // Clear the stored original
+
+                // Recalculate Profit based on Restored Fare
+                // Using standard defaults identical to NoShowDialog for consistency
+                const distanceNum = parseFloat((localJob.distance || '0').replace(/[^\d.]/g, '')) || 0;
+                const fuelCost = (distanceNum / 45) * (1.45 * 4.546); // ~45mpg, 1.45/L
+                const maintCost = distanceNum * 0.08; // 8p/mile
+                const opFee = restoredFare * ((localJob.operatorFee || 0) / 100);
+                const airport = localJob.includeAirportFee ? (localJob.airportFee || 0) : 0;
+                // No expenses as we just cleared them
+
+                const totalCosts = fuelCost + maintCost + opFee + airport;
+                const newProfit = restoredFare - totalCosts;
+
+                updatePayload.profit = newProfit;
+            }
+
+            // Optimistic Update
+            setLocalJob(prev => ({
+                ...prev,
+                ...updatePayload,
+                // Ensure strictly type-compliant updates if necessary, usually spread works fine
+                price: updatePayload.price !== undefined ? updatePayload.price : prev.price,
+                profit: updatePayload.profit !== undefined ? updatePayload.profit : prev.profit,
+                originalFare: null // Explicitly clear locally
+            }));
+
+            const result = await updateJob(localJob._id!, updatePayload);
+
+            if (result.success) {
+                toast({
+                    title: "No Show Removed",
+                    description: "Job reverted to standard Cancelled status and financials restored.",
+                });
+                router.refresh();
+            } else {
+                // Revert optimistic update if needed or rely on refresh/toast
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to revert no show",
+                });
             }
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred." });
@@ -340,11 +458,11 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                                     className={`
                   ${displayStatus === 'scheduled' ? 'bg-primary/10 text-primary border-primary/20' :
                                             displayStatus === 'completed' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-                                                'bg-red-500/10 text-red-500 border-red-500/20'} 
-                  font-medium capitalize px-1.5 py-0 rounded-full text-[10px] border shrink-0
-                `}
+                                                'bg-red-500/10 text-red-500 border-red-500/20'}  
+                                    font-medium capitalize px-1.5 py-0 rounded-full text-[10px] border shrink-0
+                                `}
                                 >
-                                    {displayStatus}
+                                    {job.noShowAt ? 'No Show' : displayStatus}
                                 </Badge>
                             </div>
                             <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
@@ -401,6 +519,27 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                                             <XCircle className="mr-2 h-4 w-4 text-red-500" />
                                             <span>Mark as Cancelled</span>
                                         </DropdownMenuItem>
+
+                                        {localJob.noShowAt && (
+                                            <DropdownMenuItem onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRevertNoShow();
+                                            }}>
+                                                <Undo2 className="mr-2 h-4 w-4" />
+                                                <span>Revert to Cancelled</span>
+                                            </DropdownMenuItem>
+                                        )}
+
+                                        {canMarkNoShow() && (
+                                            <DropdownMenuItem onClick={(e) => {
+                                                e.stopPropagation();
+                                                setNoShowDialogOpen(true);
+                                            }}>
+                                                <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
+                                                <span>Mark as No Show</span>
+                                                <span className="ml-auto text-[10px] bg-orange-100 text-orange-600 px-1 rounded">Action Required</span>
+                                            </DropdownMenuItem>
+                                        )}
 
                                         <DropdownMenuSeparator />
 
@@ -556,6 +695,12 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <NoShowDialog
+                job={job as any}
+                open={noShowDialogOpen}
+                onOpenChange={setNoShowDialogOpen}
+            />
         </>
     );
 }

@@ -15,6 +15,14 @@ export interface ChildSeatDetails {
     booster: number;
 }
 
+export interface Expense {
+    type: 'Parking' | 'Other';
+    amount: number;
+    paidByDriver: boolean;
+    refundStatus: 'Pending' | 'Refunded by Operator' | 'Refunded by VIP' | 'Non-refundable';
+    description?: string;
+}
+
 export interface PaymentHistoryEntry {
     status: string;
     date: string;
@@ -31,6 +39,7 @@ export interface MyJob {
     dropoff?: string;
     vias?: string[];
     fare?: number;
+    originalFare?: number;
     price?: string | number; // Legacy or string input
     parsedPrice?: number;
     operator?: string;
@@ -62,6 +71,9 @@ export interface MyJob {
     pickupPoint?: { lat: number; lng: number };
     dropoffPoint?: { lat: number; lng: number };
     jobRef?: string;
+    noShowWaitTime?: number;
+    noShowAt?: Date | string;
+    expenses?: Expense[];
 }
 
 export interface Operator {

@@ -11,6 +11,7 @@ interface JobFiltersProps {
         completed: number;
         cancelled: number;
         archived: number;
+        no_show: number;
     };
 }
 
@@ -33,6 +34,7 @@ export function JobFilters({ counts }: JobFiltersProps) {
         { name: 'All', value: 'all', count: counts?.all || 0 },
         { name: 'Scheduled', value: 'scheduled', count: counts?.scheduled || 0 },
         { name: 'Completed', value: 'completed', count: counts?.completed || 0 },
+        { name: 'No Show', value: 'no_show', count: counts?.no_show || 0 },
         { name: 'Cancelled', value: 'cancelled', count: counts?.cancelled || 0 },
         { name: 'Archive', value: 'archived', count: counts?.archived || 0 },
     ];
@@ -73,7 +75,7 @@ export function JobFilters({ counts }: JobFiltersProps) {
                             )}
 
                             {/* Other counts if needed, keeping it clean for others unless they have significant counts */}
-                            {['cancelled', 'archived'].includes(tab.value) && tab.count > 0 && (
+                            {['cancelled', 'archived', 'no_show'].includes(tab.value) && tab.count > 0 && (
                                 <span className="ml-1 text-xs opacity-70">
                                     {tab.count}
                                 </span>

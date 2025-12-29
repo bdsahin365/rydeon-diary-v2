@@ -30,6 +30,7 @@ export interface ProfitCalculationResult {
     commissionRate: number;
     operatorFeeAmount: number;
     airportFee: number;
+    totalExpenses: number;
 }
 
 const parseValue = (text: string): number => {
@@ -96,7 +97,25 @@ export function calculateJobProfit(
 
     const airportFee = job.includeAirportFee ? ((job.airportFee !== undefined && job.airportFee !== null) ? job.airportFee : settings.airportFee) : 0;
 
-    const totalTripCost = totalFuelCost + totalMaintenanceCost + airportFee + operatorFeeAmount;
+    // Calculate total expenses (only those NOT refunded by Operator/VIP? Or all? Usually expenses paid by driver reduce profit IF not refunded? 
+    // "Profit" usually checks if "Revenue - Costs". 
+    // If driver paid (PaidByDriver=true) and RefundStatus="Refunded...", then it's net neutral?
+    // User requirement: "Include No Show revenue in: Total fare, Profit, Profit margin".
+    // "Expense fields: Type... Amount... Paid by Driver... Refund status".
+    // If an expense is "Non-refundable" and "Paid by Driver", it reduces profit.
+    // If it is "Refunded", it cancels out? 
+    // Let's assume expenses are costs unless refunded.
+    // Simplify: Total Trip Cost includes expenses.
+
+    // Actually, usually "Expenses" like Parking are added to the FARE charged to client? Or are they costs?
+    // "Allow adding reimbursable expenses". 
+    // Let's stick to: Total Profit = Fare - (Fuel + Maintenance + Operator Fee + Airport Fee + Expenses).
+    // If expense is reimbursed, maybe it shouldn't count as cost?
+    // Let's treat all added expenses as trip costs for now. 
+
+    const expenses = (job.expenses || []).reduce((sum, exp) => sum + (exp.amount || 0), 0);
+
+    const totalTripCost = totalFuelCost + totalMaintenanceCost + airportFee + operatorFeeAmount + expenses;
 
     const totalProfit = fare - totalTripCost;
 
@@ -127,5 +146,6 @@ export function calculateJobProfit(
         commissionRate,
         operatorFeeAmount,
         airportFee,
+        totalExpenses: expenses,
     };
 }

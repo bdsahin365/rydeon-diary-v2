@@ -134,6 +134,12 @@ export function ProfitCalculator({ job, distance: distanceStr, duration: duratio
                             <span className="font-medium text-foreground">- {formatCurrency(calculations.airportFee)}</span>
                         </div>
                     )}
+                    {(calculations.totalExpenses || 0) > 0 && (
+                        <div className="flex justify-between text-muted-foreground">
+                            <span>Expenses</span>
+                            <span className="font-medium text-foreground">- {formatCurrency(calculations.totalExpenses || 0)}</span>
+                        </div>
+                    )}
                 </div>
                 <Separator className="my-0" />
                 <div className="flex justify-between items-center pt-2">

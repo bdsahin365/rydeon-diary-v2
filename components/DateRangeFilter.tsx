@@ -23,6 +23,13 @@ type PresetOption = {
 
 const defaultPresets: PresetOption[] = [
     {
+        label: "Tomorrow",
+        getValue: () => {
+            const tomorrow = addDays(new Date(), 1);
+            return { from: tomorrow, to: tomorrow };
+        },
+    },
+    {
         label: "Today",
         getValue: () => {
             const today = new Date();
@@ -30,10 +37,10 @@ const defaultPresets: PresetOption[] = [
         },
     },
     {
-        label: "Tomorrow",
+        label: "Yesterday",
         getValue: () => {
-            const tomorrow = addDays(new Date(), 1);
-            return { from: tomorrow, to: tomorrow };
+            const yesterday = addDays(new Date(), -1);
+            return { from: yesterday, to: yesterday };
         },
     },
     {
@@ -68,6 +75,13 @@ const dashboardPresets: PresetOption[] = [
         getValue: () => {
             const today = new Date();
             return { from: today, to: today };
+        },
+    },
+    {
+        label: "Yesterday",
+        getValue: () => {
+            const yesterday = addDays(new Date(), -1);
+            return { from: yesterday, to: yesterday };
         },
     },
     {

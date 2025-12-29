@@ -7,6 +7,7 @@ import { formatPrice, cn } from "@/lib/utils";
 interface StatsCardsProps {
     data: {
         revenue: { value: number; trend: number };
+        scheduledRevenue?: { value: number };
         profit: { value: number };
         jobs: { value: number };
         distance: { value: number; unit: string };
@@ -22,6 +23,13 @@ export function StatsCards({ data }: StatsCardsProps) {
             icon: DollarSign,
             description: "+20.1% from last month",
             trendColor: "text-muted-foreground"
+        },
+        {
+            title: "Scheduled Revenue",
+            value: formatPrice(data.scheduledRevenue?.value || 0),
+            icon: TrendingUp,
+            description: "Upcoming jobs",
+            trendColor: "text-blue-500"
         },
         {
             title: "Net Profit",
@@ -48,7 +56,7 @@ export function StatsCards({ data }: StatsCardsProps) {
     ];
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {cards.map((card, index) => (
                 <Card key={index}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

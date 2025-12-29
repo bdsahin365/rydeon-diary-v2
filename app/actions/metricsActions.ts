@@ -24,7 +24,7 @@ export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
     try {
         const jobs = await Job.find({
             userId,
-            status: 'completed',
+            status: { $in: ['completed', 'scheduled'] },
         }).lean();
 
 
@@ -33,6 +33,7 @@ export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
         // Assuming bookingDate is 'DD/MM/YYYY' string or Date object.
 
         let totalRevenue = 0;
+        let totalScheduledRevenue = 0;
         let totalProfit = 0;
         let totalJobs = 0;
         let totalDistance = 0;
@@ -53,26 +54,31 @@ export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
                 if (dateTo && jobDate > endOfDay(dateTo)) return;
 
                 const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
-                const profit = job.profit || (price - (job.operatorFeeAmount || 0) - (job.airportFee || 0));
 
-                // All-time (or Filtered Range) stats
-                totalRevenue += price;
-                totalProfit += profit;
-                totalJobs += 1;
+                if (job.status === 'scheduled') {
+                    totalScheduledRevenue += price;
+                } else if (job.status === 'completed') {
+                    const profit = job.profit || (price - (job.operatorFeeAmount || 0) - (job.airportFee || 0));
 
-                // Distance & Duration
-                if (job.distance) {
-                    const dist = parseFloat(job.distance.toString().replace(/[^\d.]/g, '')) || 0;
-                    totalDistance += dist;
-                }
-                if (job.duration) {
-                    let mins = 0;
-                    const h = job.duration.match(/(\d+)\s*h/);
-                    const m = job.duration.match(/(\d+)\s*m/);
-                    if (h) mins += parseInt(h[1]) * 60;
-                    if (m) mins += parseInt(m[1]);
-                    if (!h && !m && !isNaN(parseInt(job.duration))) mins = parseInt(job.duration);
-                    totalDurationMins += mins;
+                    // All-time (or Filtered Range) stats
+                    totalRevenue += price;
+                    totalProfit += profit;
+                    totalJobs += 1;
+
+                    // Distance & Duration
+                    if (job.distance) {
+                        const dist = parseFloat(job.distance.toString().replace(/[^\d.]/g, '')) || 0;
+                        totalDistance += dist;
+                    }
+                    if (job.duration) {
+                        let mins = 0;
+                        const h = job.duration.match(/(\d+)\s*h/);
+                        const m = job.duration.match(/(\d+)\s*m/);
+                        if (h) mins += parseInt(h[1]) * 60;
+                        if (m) mins += parseInt(m[1]);
+                        if (!h && !m && !isNaN(parseInt(job.duration))) mins = parseInt(job.duration);
+                        totalDurationMins += mins;
+                    }
                 }
             }
         });
@@ -92,6 +98,8 @@ export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
             let lastMonthRevenue = 0;
 
             jobs.forEach((job: any) => {
+                if (job.status !== 'completed') return;
+
                 const d = parseJobDate(job.bookingDate);
                 if (d) {
                     const p = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
@@ -106,6 +114,7 @@ export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
 
         return {
             revenue: { value: totalRevenue, trend: revenueTrend },
+            scheduledRevenue: { value: totalScheduledRevenue },
             profit: { value: totalProfit },
             jobs: { value: totalJobs },
             distance: { value: totalDistance, unit: 'mi' },
@@ -347,7 +356,14 @@ export async function getReportStats(dateFrom?: Date, dateTo?: Date) {
                 midnight: 0,
                 day: 0,
                 evening: 0
-            } as Record<string, number>
+            } as Record<string, number>,
+            costs: {
+                profit: 0,
+                operatorFees: 0,
+                airportFees: 0,
+                fuel: 0,
+                maintenance: 0
+            }
         };
 
         jobs.forEach((job: any) => {
@@ -357,6 +373,38 @@ export async function getReportStats(dateFrom?: Date, dateTo?: Date) {
 
             stats.total++;
             const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+
+            // Costs & Profit
+            const opFee = job.operatorFeeAmount || (job.operatorFee ? price * (job.operatorFee / 100) : 0);
+            const airportFee = job.airportFee || 0;
+
+            // Calculate Vehicle Costs
+            // Mock settings matching useSettings hook
+            const SETTINGS = {
+                fuelPrice: 1.50,
+                fuelEfficiency: 45,
+                maintenanceCost: 0.15
+            };
+            const LITRE_PER_GALLON = 4.546;
+
+            let dist = 0;
+            if (job.distance) {
+                // Parse distance "50 mi" -> 50
+                dist = parseFloat(job.distance.toString().replace(/[^\d.]/g, '')) || 0;
+            }
+
+            const fuelPricePerGallon = SETTINGS.fuelPrice * LITRE_PER_GALLON;
+            const fuelCost = dist > 0 ? (dist / SETTINGS.fuelEfficiency) * fuelPricePerGallon : 0;
+            const maintenanceCost = dist * SETTINGS.maintenanceCost;
+
+            // Use stored profit if available, otherwise calculate
+            const profit = job.profit || (price - opFee - airportFee - fuelCost - maintenanceCost);
+
+            stats.costs.profit += profit;
+            stats.costs.operatorFees += opFee;
+            stats.costs.airportFees += airportFee;
+            stats.costs.fuel += fuelCost;
+            stats.costs.maintenance += maintenanceCost;
 
             // Status counts
             const status = job.status || 'unknown';

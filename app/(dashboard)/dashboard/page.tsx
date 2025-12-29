@@ -60,6 +60,7 @@ export default async function Dashboard({
   // Handle errors gracefully (simple fallback for now)
   const safeStats = "error" in statsData ? {
     revenue: { value: 0, trend: 0 },
+    scheduledRevenue: { value: 0 },
     profit: { value: 0 },
     jobs: { value: 0 },
     distance: { value: 0, unit: 'mi' },
@@ -78,7 +79,14 @@ export default async function Dashboard({
       unpaid: { count: 0, value: 0 },
       overdue: { count: 0, value: 0 }
     },
-    timeOfDay: {}
+    timeOfDay: {},
+    costs: {
+      profit: 0,
+      operatorFees: 0,
+      airportFees: 0,
+      fuel: 0,
+      maintenance: 0
+    }
   };
 
   return (
@@ -124,6 +132,7 @@ export default async function Dashboard({
               vehicleStats={vehicleStats}
               statusCounts={safeReportStats.status}
               paymentCounts={safeReportStats.payment}
+              costs={safeReportStats.costs}
             />
           </div>
         </TabsContent>
