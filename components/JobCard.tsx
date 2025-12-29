@@ -568,6 +568,24 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                                                         <span className="ml-auto text-[10px] bg-orange-100 text-orange-600 px-1 rounded">Action Required</span>
                                                     </DropdownMenuItem>
                                                 )}
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setArchiveDialogOpen(true);
+                                                }}>
+                                                    <Archive className="mr-2 h-4 w-4" />
+                                                    <span>Move to Archive</span>
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteDialogOpen(true);
+                                                }} className="text-red-600 focus:text-red-600">
+                                                    <Trash className="mr-2 h-4 w-4" />
+                                                    <span>Delete</span>
+                                                </DropdownMenuItem>
                                             </>
                                         )}
 
