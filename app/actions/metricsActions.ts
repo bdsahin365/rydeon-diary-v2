@@ -400,11 +400,13 @@ export async function getReportStats(dateFrom?: Date, dateTo?: Date) {
             // Use stored profit if available, otherwise calculate
             const profit = job.profit || (price - opFee - airportFee - fuelCost - maintenanceCost);
 
-            stats.costs.profit += profit;
-            stats.costs.operatorFees += opFee;
-            stats.costs.airportFees += airportFee;
-            stats.costs.fuel += fuelCost;
-            stats.costs.maintenance += maintenanceCost;
+            if (job.status === 'completed') {
+                stats.costs.profit += profit;
+                stats.costs.operatorFees += opFee;
+                stats.costs.airportFees += airportFee;
+                stats.costs.fuel += fuelCost;
+                stats.costs.maintenance += maintenanceCost;
+            }
 
             // Status counts
             const status = job.status || 'unknown';
