@@ -83,6 +83,7 @@ export interface Job {
     operatorFee?: number;
     airportFee?: number;
     includeAirportFee?: boolean;
+    parsedPrice?: number;
 }
 
 interface JobCardProps {
@@ -129,32 +130,36 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     const displayName = localJob.customerName || localJob.operator || "N/A";
     const displayStatus = localJob.status || "N/A";
 
-    const canMarkNoShow = () => {
-        if (job.noShowAt) return false; // Already marked
-        if (job.status !== 'scheduled' && job.status !== 'cancelled') return false;
-        if (!job.bookingDate || !job.bookingTime) return false;
+    // No Show Eligibility State (Moved to effect to avoid hydration mismatch)
+    const [isNoShowEligible, setIsNoShowEligible] = useState(false);
 
-        try {
-            // Parse job date/time (Assuming DD/MM/YYYY)
-            // Note: In client, we might need a robust parser.
-            // Let's simple-parse for now matching `app/actions/jobActions.ts` or `time-utils`.
-            // format: DD/MM/YYYY and HH:MM
-            const [d, m, y] = job.bookingDate.split('/').map(Number);
-            const [h, min] = job.bookingTime.split(':').map(Number);
-            const jobDate = new Date(y, m - 1, d, h, min);
+    useEffect(() => {
+        const checkEligibility = () => {
+            if (localJob.noShowAt) return false;
+            if (localJob.status !== 'scheduled' && localJob.status !== 'cancelled') return false;
+            if (!localJob.bookingDate || !localJob.bookingTime) return false;
 
-            // Add 15 minutes grace period
-            const gracePeriodEnds = new Date(jobDate.getTime() + 15 * 60000);
+            try {
+                // Parse job date/time (Assuming DD/MM/YYYY)
+                const [d, m, y] = localJob.bookingDate.split('/').map(Number);
+                const [h, min] = localJob.bookingTime.split(':').map(Number);
+                const jobDate = new Date(y, m - 1, d, h, min);
 
-            // Compare with current time
-            const now = new Date();
+                // Add 15 minutes grace period
+                const gracePeriodEnds = new Date(jobDate.getTime() + 15 * 60000);
 
-            return now > gracePeriodEnds;
-        } catch (e) {
-            console.error("Error checking No Show eligibility", e);
-            return false;
-        }
-    };
+                // Compare with current time
+                const now = new Date();
+
+                return now > gracePeriodEnds;
+            } catch (e) {
+                console.error("Error checking No Show eligibility", e);
+                return false;
+            }
+        };
+
+        setIsNoShowEligible(checkEligibility());
+    }, [localJob]);
 
     // Convert 24-hour time to 12-hour format
     const formatTime12Hour = (time24: string) => {
@@ -176,19 +181,11 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     }
 
     // Parse price (e.g., "£55 NET" -> 55)
-    let priceValue = 0;
-    let parsedPrice = 0;
-
-    if (localJob.price) {
-        const priceString = localJob.price.toString();
-        parsedPrice = parseFloat(priceString.replace(/[^\d.]/g, '')) || 0;
-    }
-
-    if (parsedPrice > 0) {
-        priceValue = parsedPrice;
-    } else if (localJob.fare) {
-        priceValue = localJob.fare;
-    }
+    // Robust price calculation matching metrics logic
+    const priceValue = (typeof localJob.fare === 'number' ? localJob.fare : 0) ||
+        (typeof localJob.parsedPrice === 'number' ? localJob.parsedPrice : 0) ||
+        (typeof localJob.price === 'number' ? localJob.price :
+            (localJob.price ? parseFloat(localJob.price.toString().replace(/[^\d.]/g, '')) || 0 : 0));
 
     // Profit calculation (mock logic for now, or 0 if not available)
     const profitValue = localJob.profit || 0;
@@ -442,6 +439,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     return (
         <>
             <Card
+                suppressHydrationWarning
                 className={`
                     bg-card text-card-foreground rounded-xl border group border-border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer
                     ${highlightStatus === 'active' ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/5' :
@@ -486,7 +484,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                         </div>
                         <div className="flex items-start gap-1.5 sm:gap-3 shrink-0 ml-2">
                             <div className="text-right">
-                                <div className="text-base sm:text-lg font-bold text-green-500">£{profitValue.toFixed(2)}</div>
+                                <div className="text-base sm:text-lg font-bold text-green-500" suppressHydrationWarning>£{profitValue.toFixed(2)}</div>
                                 <div className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wide">profit</div>
                             </div>
                             <div onClick={(e) => e.stopPropagation()}>
@@ -545,7 +543,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                                                     <span>Mark as Cancelled</span>
                                                 </DropdownMenuItem>
 
-                                                {canMarkNoShow() && (
+                                                {isNoShowEligible && (
                                                     <DropdownMenuItem onClick={(e) => {
                                                         e.stopPropagation();
                                                         setNoShowDialogOpen(true);
@@ -710,7 +708,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                                                     <span>Mark as Completed</span>
                                                 </DropdownMenuItem>
 
-                                                {canMarkNoShow() && (
+                                                {isNoShowEligible && (
                                                     <DropdownMenuItem onClick={(e) => {
                                                         e.stopPropagation();
                                                         setNoShowDialogOpen(true);
@@ -842,7 +840,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
 
                         <div className="text-right shrink-0 ml-2">
                             <div className="text-sm sm:text-base font-bold text-foreground">£{priceValue.toFixed(2)}</div>
-                            <div className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${isPaid ? 'text-green-600' : isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
+                            <div className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${isPaid ? 'text-green-600' : isOverdue ? 'text-red-500' : 'text-orange-500'}`} suppressHydrationWarning>
                                 {paymentStatus}
                             </div>
                         </div>

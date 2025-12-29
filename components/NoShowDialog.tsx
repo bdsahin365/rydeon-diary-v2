@@ -31,7 +31,9 @@ export function NoShowDialog({ job, open, onOpenChange, onSuccess }: NoShowDialo
     const [customFare, setCustomFare] = useState<number>(0);
     const [expenses, setExpenses] = useState<Expense[]>([]);
 
-    const baseFare = parseFloat(job.price?.toString().replace(/[^\d.]/g, '') || '0') || job.fare || 0;
+    const baseFare = (typeof job.fare === 'number' ? job.fare : 0) ||
+        (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) ||
+        (job.price ? parseFloat(job.price.toString().replace(/[^\d.]/g, '')) || 0 : 0);
 
     const handleSave = async () => {
         if (!job._id) return;

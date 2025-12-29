@@ -7,6 +7,7 @@ import { generateJobRef } from "@/lib/job-utils";
 import { auth } from "@/auth";
 import { parse, isWithinInterval, isValid, format } from "date-fns";
 import { categorizeTimeOfDay } from "@/lib/time-utils";
+import { parsePrice, getJobPrice } from "@/lib/price-utils";
 
 export async function exportJobs(
     type: 'current' | 'custom',
@@ -82,21 +83,8 @@ export async function exportJobs(
     };
 
     const rows = jobs.map((job: any) => {
-        // Robust price calculation matching JobCard logic
-        let priceValue = 0;
-        let parsedPrice = 0;
-
-        if (job.price) {
-            const priceString = job.price.toString();
-            // Parse numbers, handling "£55", "55.00", etc.
-            parsedPrice = parseFloat(priceString.replace(/[^\d.]/g, '')) || 0;
-        }
-
-        if (parsedPrice > 0) {
-            priceValue = parsedPrice;
-        } else if (job.fare) {
-            priceValue = job.fare;
-        }
+        // Robust price calculation matching metrics logic
+        const priceValue = getJobPrice(job);
 
         // Format as simply the value, or keep currency symbol if preferred? 
         // User likely wants just the number or consistent formatting. 
@@ -633,7 +621,8 @@ export async function checkDuplicateJob(
             $or: [
                 { price: price.toString() },
                 { price: price },
-                { fare: price }
+                { fare: price },
+                { parsedPrice: price }
             ]
         };
 

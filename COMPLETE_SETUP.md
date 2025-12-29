@@ -42,8 +42,8 @@ Your Stripe API keys are now configured! You just need to:
 Add these two lines to your `.env.local` file:
 
 ```bash
-NEXT_PUBLIC_STRIPE_PRICE_PRO=price_YOUR_PRO_ID_HERE
-NEXT_PUBLIC_STRIPE_PRICE_BUSINESS=price_YOUR_BUSINESS_ID_HERE
+NEXT_PUBLIC_STRIPE_PRICE_PRO=prod_TfYRQ8nEh6A1vX
+NEXT_PUBLIC_STRIPE_PRICE_BUSINESS=prod_TfYUR551zlJlpR
 ```
 
 **Quick method:** Run this command and paste your Price IDs:

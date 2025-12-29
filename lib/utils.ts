@@ -7,18 +7,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const parsePrice = (priceStr: string | number | undefined): number => {
-  if (!priceStr) return 0;
-  if (typeof priceStr === 'number') return priceStr;
-  // Remove commas and currency symbols, keep digits and dots
-  const cleanStr = priceStr.toString().replace(/,/g, '');
-  const match = cleanStr.match(/[\d.]+/);
-  return match ? parseFloat(match[0]) : 0;
-};
 
-export const formatPrice = (price: number): string => {
-  return "£" + price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-};
 
 export const parseJobDate = (dateStr: string | Date): Date | undefined => {
   if (dateStr instanceof Date) return dateStr;

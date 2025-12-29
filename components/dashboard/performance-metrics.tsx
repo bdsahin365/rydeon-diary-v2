@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/price-utils";
 import { TrendingUp, Car, Activity, CheckCircle, XCircle } from "lucide-react";
 
 interface PerformanceMetricsProps {

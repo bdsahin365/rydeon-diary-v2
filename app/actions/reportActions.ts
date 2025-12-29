@@ -3,7 +3,8 @@
 import dbConnect from "@/lib/mongodb";
 import Job from "@/models/Job";
 import { auth } from "@/auth";
-import { parseJobDate, parsePrice } from "@/lib/utils";
+import { parseJobDate } from "@/lib/utils";
+import { parsePrice, getJobPrice } from "@/lib/price-utils";
 import { startOfDay, endOfDay, format } from "date-fns";
 
 export async function getExportData(dateFrom?: Date, dateTo?: Date) {
@@ -32,7 +33,7 @@ export async function getExportData(dateFrom?: Date, dateTo?: Date) {
 
         // Format for export
         const exportData = filteredJobs.map((job: any) => {
-            const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+            const price = getJobPrice(job);
             const operatorFee = job.operatorFeeAmount || 0;
             const airportFee = job.airportFee || 0;
             const profit = job.profit || (price - operatorFee - airportFee);

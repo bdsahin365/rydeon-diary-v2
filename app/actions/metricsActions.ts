@@ -4,7 +4,8 @@ import dbConnect from "@/lib/mongodb";
 import Job from "@/models/Job";
 import { auth } from "@/auth";
 import { startOfMonth, subMonths, startOfWeek, subDays, format, parse, isValid, differenceInMinutes, startOfDay, endOfDay } from "date-fns";
-import { parsePrice, parseJobDate } from "@/lib/utils";
+import { parseJobDate } from "@/lib/utils";
+import { parsePrice, getJobPrice } from "@/lib/price-utils";
 
 export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
     const session = await auth();
@@ -53,7 +54,7 @@ export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
                 if (dateFrom && jobDate < startOfDay(dateFrom)) return;
                 if (dateTo && jobDate > endOfDay(dateTo)) return;
 
-                const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+                const price = getJobPrice(job);
 
                 if (job.status === 'scheduled') {
                     totalScheduledRevenue += price;
@@ -102,7 +103,7 @@ export async function getStatsSummary(dateFrom?: Date, dateTo?: Date) {
 
                 const d = parseJobDate(job.bookingDate);
                 if (d) {
-                    const p = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+                    const p = getJobPrice(job);
                     if (d >= firstDayOfMonth) currentMonthRevenue += p;
                     else if (d >= firstDayOfLastMonth && d < firstDayOfMonth) lastMonthRevenue += p;
                 }
@@ -135,7 +136,7 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' | 'custom' 
     const jobs = await Job.find({
         userId: session.user.id,
         status: 'completed'
-    }).select('bookingDate price profit').lean();
+    }).select('bookingDate price fare parsedPrice profit').lean();
 
     const dataMap = new Map<string, { revenue: number, profit: number }>();
     const now = new Date();
@@ -183,7 +184,7 @@ export async function getEarningsHistory(range: '7d' | '30d' | '12m' | 'custom' 
         }
 
         if (date && date >= startOfDay(startDate) && date <= endOfDay(endDate)) {
-            const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+            const price = getJobPrice(job);
             const profit = job.profit || price;
 
             let key = '';
@@ -215,7 +216,7 @@ export async function getOperatorStats(dateFrom?: Date, dateTo?: Date) {
     await dbConnect();
 
     // Fetch jobs manually to handle messy price strings/mixed types safely
-    const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('operator price bookingDate').lean();
+    const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('operator price fare parsedPrice bookingDate').lean();
     const map = new Map<string, { jobs: number, revenue: number }>();
 
     jobs.forEach((j: any) => {
@@ -224,7 +225,7 @@ export async function getOperatorStats(dateFrom?: Date, dateTo?: Date) {
         if (dateTo && (!d || d > endOfDay(dateTo))) return;
 
         const op = j.operator || 'Unknown';
-        const price = (typeof j.fare === 'number' ? j.fare : 0) || (typeof j.parsedPrice === 'number' ? j.parsedPrice : 0) || (typeof j.price === 'number' ? j.price : parsePrice(j.price));
+        const price = getJobPrice(j);
         const curr = map.get(op) || { jobs: 0, revenue: 0 };
         curr.jobs += 1;
         curr.revenue += price;
@@ -305,7 +306,7 @@ export async function getVehicleStats(dateFrom?: Date, dateTo?: Date) {
     await dbConnect();
 
     try {
-        const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('vehicle price bookingDate').lean();
+        const jobs = await Job.find({ userId: session.user.id, status: 'completed' }).select('vehicle price fare parsedPrice bookingDate').lean();
         const map = new Map<string, { jobs: number, revenue: number }>();
 
         jobs.forEach((j: any) => {
@@ -314,7 +315,7 @@ export async function getVehicleStats(dateFrom?: Date, dateTo?: Date) {
             if (dateTo && (!d || d > endOfDay(dateTo))) return;
 
             const v = j.vehicle || 'Unknown';
-            const price = (typeof j.fare === 'number' ? j.fare : 0) || (typeof j.parsedPrice === 'number' ? j.parsedPrice : 0) || (typeof j.price === 'number' ? j.price : parsePrice(j.price));
+            const price = getJobPrice(j);
 
             const curr = map.get(v) || { jobs: 0, revenue: 0 };
             curr.jobs += 1;
@@ -372,7 +373,7 @@ export async function getReportStats(dateFrom?: Date, dateTo?: Date) {
             if (dateTo && (!d || d > endOfDay(dateTo))) return;
 
             stats.total++;
-            const price = (typeof job.fare === 'number' ? job.fare : 0) || (typeof job.parsedPrice === 'number' ? job.parsedPrice : 0) || (typeof job.price === 'number' ? job.price : parsePrice(job.price));
+            const price = getJobPrice(job);
 
             // Costs & Profit
             const opFee = job.operatorFeeAmount || (job.operatorFee ? price * (job.operatorFee / 100) : 0);

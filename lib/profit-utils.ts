@@ -1,6 +1,6 @@
 
 import type { MyJob, ProcessedJob, Operator } from '@/types';
-import { parsePrice } from '@/lib/utils';
+import { parsePrice } from '@/lib/price-utils';
 
 export const LITRE_PER_GALLON = 4.546;
 

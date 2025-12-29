@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Wallet, Car, Activity, TrendingUp } from "lucide-react";
-import { formatPrice, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/price-utils";
 
 interface StatsCardsProps {
     data: {
