@@ -73,6 +73,8 @@ export interface MyJob {
     jobRef?: string;
     noShowWaitTime?: number;
     noShowAt?: Date | string;
+    cancellationReason?: string;
+    cancelledAt?: Date | string;
     expenses?: Expense[];
 }
 

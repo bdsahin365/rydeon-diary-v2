@@ -34,6 +34,7 @@ import { JobDetailsSheet } from "@/components/JobDetailsSheet";
 import { PaymentStatusDialog } from "@/components/PaymentStatusDialog";
 import { NoShowDialog } from "@/components/NoShowDialog";
 import { ProcessedJob, PaymentStatus, MyJob } from "@/types";
+import { CancellationReasonDialog } from "@/components/CancellationReasonDialog";
 
 import {
     AlertDialog,
@@ -113,6 +114,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
     const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
     const [noShowDialogOpen, setNoShowDialogOpen] = useState(false);
+    const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
     const [revertConfirmOpen, setRevertConfirmOpen] = useState(false);
 
     // Optimistic UI State
@@ -537,7 +539,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
 
                                                 <DropdownMenuItem onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleStatusChange('cancelled');
+                                                    setCancellationDialogOpen(true);
                                                 }}>
                                                     <XCircle className="mr-2 h-4 w-4 text-red-500" />
                                                     <span>Mark as Cancelled</span>
@@ -610,7 +612,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
 
                                                 <DropdownMenuItem onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleStatusChange('cancelled');
+                                                    setCancellationDialogOpen(true);
                                                 }}>
                                                     <XCircle className="mr-2 h-4 w-4 text-red-500" />
                                                     <span>Mark as Cancelled</span>
@@ -903,6 +905,11 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                 job={job as any}
                 open={noShowDialogOpen}
                 onOpenChange={setNoShowDialogOpen}
+            />
+            <CancellationReasonDialog
+                job={job as any}
+                open={cancellationDialogOpen}
+                onOpenChange={setCancellationDialogOpen}
             />
             <AlertDialog open={revertConfirmOpen} onOpenChange={setRevertConfirmOpen}>
                 <AlertDialogContent>

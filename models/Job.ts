@@ -29,6 +29,8 @@ export interface IJob extends Document {
     timeOfDay?: 'midnight' | 'day' | 'evening';
     noShowWaitTime?: number;
     noShowAt?: Date | string;
+    cancellationReason?: string;
+    cancelledAt?: Date | string;
     expenses?: Array<{
         type: string;
         amount: number;
@@ -67,6 +69,8 @@ const JobSchema: Schema = new Schema({
     timeOfDay: { type: String, enum: ['midnight', 'day', 'evening'], index: true },
     noShowWaitTime: { type: Number },
     noShowAt: { type: Date },
+    cancellationReason: { type: String },
+    cancelledAt: { type: Date },
     expenses: [{
         type: { type: String },
         amount: { type: Number },

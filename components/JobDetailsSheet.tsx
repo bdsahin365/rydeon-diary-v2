@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getTripInfo } from '@/ai/flows/get-trip-info';
 import { checkJobOverlap } from '@/app/actions/jobActions';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { AlertTriangle, Map, Clock, User, Car, Calendar, Phone, Plane, MessageSquare, BaggageClaim, Baby, CircleDot, Flag, Square, Users, Banknote, Copy, Download, Receipt } from 'lucide-react';
+import { AlertTriangle, Map, Clock, User, Car, Calendar, Phone, Plane, MessageSquare, BaggageClaim, Baby, CircleDot, Flag, Square, Users, Banknote, Copy, Download, Receipt, XCircle } from 'lucide-react';
 import type { MyJob, ProcessedJob } from '@/types';
 import { ProfitCalculator } from './profit-calculator';
 import { RouteDisplay } from './RouteDisplay';
@@ -204,6 +204,24 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto">
+                    {job?.status === 'cancelled' && !job.noShowAt && (
+                        <div className="px-6 pt-6 pb-2">
+                            <Alert variant="destructive" className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900">
+                                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
+                                <div className="flex-1">
+                                    <AlertTitle className="text-red-800 dark:text-red-200 mb-1">Job Cancelled</AlertTitle>
+                                    <AlertDescription className="text-red-700 dark:text-red-300">
+                                        This job was cancelled on {job.cancelledAt ? format(new Date(job.cancelledAt), 'dd/MM/yyyy HH:mm') : 'Unknown Date'}.
+                                        {job.cancellationReason && (
+                                            <div className="mt-1 font-medium">
+                                                Reason: {job.cancellationReason}
+                                            </div>
+                                        )}
+                                    </AlertDescription>
+                                </div>
+                            </Alert>
+                        </div>
+                    )}
                     {overlappingJobs.length > 0 && (
                         <div className="px-6 pt-6 pb-2">
                             <Alert variant="default" className="border-orange-500 bg-orange-50 dark:bg-orange-950/30">

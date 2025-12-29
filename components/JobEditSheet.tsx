@@ -29,11 +29,12 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { createJob, checkJobOverlap } from '@/app/actions/jobActions';
 import { createVehicleType, getVehicleTypes } from '@/app/actions/vehicleTypeActions';
 import { calculateJobProfit } from '@/lib/profit-utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTitle, AlertDescription, Alert } from '@/components/ui/alert';
 import { ResponsiveSelect } from '@/components/responsive-select';
 import { ResponsiveDatePicker } from '@/components/responsive-date-picker';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle } from 'lucide-react';
+import { CancellationReasonSelector, REASON_OPTIONS } from './CancellationReasonSelector';
 
 type JobEditSheetProps = {
     job?: Partial<ProcessedJob>;
@@ -88,6 +89,7 @@ export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheet
     const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [overlappingJobs, setOverlappingJobs] = useState<any[]>([]);
+    const [customReason, setCustomReason] = useState<string>('');
     const isDesktop = useMediaQuery("(min-width: 768px)");
 
     useEffect(() => {
@@ -137,9 +139,23 @@ export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheet
 
             const operatorFee = operator?.chargesCommission ? operator.commissionRate || 0 : settings.operatorFee;
 
+            // Initialize custom reason logic
+            let initialCustomReason = '';
+            let initialReasonValue = job?.cancellationReason || '';
+
+            if (job?.cancellationReason) {
+                const isPredefined = REASON_OPTIONS.some(r => r.value === job.cancellationReason);
+                if (!isPredefined) {
+                    initialCustomReason = job.cancellationReason;
+                    initialReasonValue = 'Other';
+                }
+            }
+            setCustomReason(initialCustomReason);
+
             const initialState: Partial<ProcessedJob & MyJob> = job
                 ? {
                     ...job,
+                    cancellationReason: initialReasonValue, // Ensure "Other" is selected if custom
                     bookingTime: job.bookingTime || '',
                     bookingDate: job.bookingDate || format(new Date(), 'dd/MM/yyyy'),
                     operatorFee: (job as MyJob).operatorFee ?? operatorFee,
@@ -259,6 +275,20 @@ export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheet
                 if (pt) payload.dropoffPoint = pt;
             }
 
+            // Handle cancellation logic
+            if (payload.status === 'cancelled') {
+                if (!payload.cancelledAt) {
+                    payload.cancelledAt = new Date();
+                }
+
+                // Process custom reason
+                if (payload.cancellationReason === 'Other') {
+                    payload.cancellationReason = customReason;
+                }
+            }
+
+
+
             // Calculate profit before saving
             const profitResult = calculateJobProfit(
                 { ...payload, fare: payload.fare || payload.parsedPrice || 0 } as any,
@@ -368,6 +398,20 @@ export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheet
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
+                    {job?.status === 'cancelled' && !job.noShowAt && (
+                        <Alert variant="destructive" className="mb-4 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900">
+                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                            <AlertTitle className="text-red-800 dark:text-red-200">Job Cancelled</AlertTitle>
+                            <AlertDescription className="text-red-700 dark:text-red-300">
+                                This job was cancelled on {job.cancelledAt ? format(new Date(job.cancelledAt), 'dd/MM/yyyy HH:mm') : 'Unknown Date'}.
+                                {job.cancellationReason && (
+                                    <div className="mt-1 font-medium">
+                                        Reason: {job.cancellationReason}
+                                    </div>
+                                )}
+                            </AlertDescription>
+                        </Alert>
+                    )}
                     {overlappingJobs.length > 0 && (
                         <Alert variant="default" className="mb-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
                             <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -407,6 +451,18 @@ export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheet
                                     ]}
                                     label="Job Status"
                                 />
+                                {(editState as MyJob).status === 'cancelled' && (
+                                    <div className="pt-2 animate-in fade-in slide-in-from-top-2">
+                                        <Label className="mb-2 block">Cancellation Reason</Label>
+                                        <CancellationReasonSelector
+                                            selectedReason={(editState as MyJob).cancellationReason || ''}
+                                            onReasonChange={(val) => handleValueChange('cancellationReason', val)}
+                                            customReason={customReason}
+                                            onCustomReasonChange={setCustomReason}
+                                            compact={true}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <Label>Job Provider (Uber, Bolt, etc.)</Label>
