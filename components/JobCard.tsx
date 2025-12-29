@@ -920,6 +920,22 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                 open={noShowDialogOpen}
                 onOpenChange={setNoShowDialogOpen}
             />
+            <AlertDialog open={revertConfirmOpen} onOpenChange={setRevertConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Revert to Standard Cancelled?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will remove the "No Show" status and all associated data (including evidence notes and calculated charges). The job will be reverted to a standard "Cancelled" status with its original fare restored.
+                            <br /><br />
+                            Are you sure you want to proceed?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRevertNoShow}>Confirm Revert</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
