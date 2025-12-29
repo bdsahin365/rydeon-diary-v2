@@ -112,6 +112,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
     const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
     const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
     const [noShowDialogOpen, setNoShowDialogOpen] = useState(false);
+    const [revertConfirmOpen, setRevertConfirmOpen] = useState(false);
 
     // Optimistic UI State
     const [localJob, setLocalJob] = useState(job);
@@ -672,7 +673,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
 
                                                 <DropdownMenuItem onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleRevertNoShow();
+                                                    setRevertConfirmOpen(true);
                                                 }}>
                                                     <Undo2 className="mr-2 h-4 w-4" />
                                                     <span>Revert to Cancelled</span>
