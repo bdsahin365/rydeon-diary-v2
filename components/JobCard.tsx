@@ -219,7 +219,7 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                 jobUpdate.bookingDate = `${day}/${month}/${year}`;
             }
 
-            const result = await updateJob(job._id, jobUpdate);
+            const result = await updateJob(localJob._id, jobUpdate);
             if (result.success) {
                 toast({ title: "Job Updated", description: "Changes saved successfully." });
                 router.refresh();
