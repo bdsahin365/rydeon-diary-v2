@@ -39,6 +39,7 @@ type JobEditSheetProps = {
     job?: Partial<ProcessedJob>;
     children: React.ReactNode;
     onSave: (job: Partial<ProcessedJob>) => void;
+    initialTab?: string;
 };
 
 const EMPTY_JOB: Partial<ProcessedJob> = {
@@ -77,7 +78,7 @@ function NumberStepper({ value, onChange, min = 0, max = 10 }: { value: number; 
     )
 }
 
-export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
+export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheetProps) {
     const [open, setOpen] = useState(false);
     const [editState, setEditState] = useState<Partial<ProcessedJob>>({});
     const [existingOperators, setExistingOperators] = useState<Operator[]>([]);
@@ -327,6 +328,29 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
         });
     };
 
+    const addExpense = () => {
+        setEditState(prev => ({
+            ...prev,
+            expenses: [...(prev.expenses || []), { description: '', amount: 0, type: 'Other', paidByDriver: true, refundStatus: 'Pending' }]
+        }));
+    };
+
+    const removeExpense = (index: number) => {
+        setEditState(prev => {
+            const newExpenses = [...(prev.expenses || [])];
+            newExpenses.splice(index, 1);
+            return { ...prev, expenses: newExpenses };
+        });
+    };
+
+    const handleExpenseChange = (index: number, field: keyof Expense, value: string | number) => {
+        setEditState(prev => {
+            const newExpenses = [...(prev.expenses || [])];
+            newExpenses[index] = { ...newExpenses[index], [field]: value };
+            return { ...prev, expenses: newExpenses };
+        });
+    };
+
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -363,7 +387,7 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                             </AlertDescription>
                         </Alert>
                     )}
-                    <Tabs defaultValue="details" className="w-full">
+                    <Tabs defaultValue={initialTab || "details"} className="w-full">
                         <TabsList className="grid w-full grid-cols-3 mb-4">
                             <TabsTrigger value="details">Trip Details</TabsTrigger>
                             <TabsTrigger value="finance">Finance</TabsTrigger>
@@ -495,6 +519,48 @@ export function JobEditSheet({ job, children, onSave }: JobEditSheetProps) {
                                     )}
                                 </div>
                             </div>
+
+                            <Separator />
+
+                            <div className="space-y-4 rounded-lg border p-4 bg-muted/20">
+                                <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2"><Receipt className="h-4 w-4" /> Reimbursable Expenses</Label>
+                                    <Button type="button" variant="ghost" size="sm" onClick={addExpense} className="h-8">
+                                        <Plus className="h-3 w-3 mr-1" /> Add
+                                    </Button>
+                                </div>
+                                {(!editState.expenses || editState.expenses.length === 0) && (
+                                    <p className="text-xs text-muted-foreground text-center py-2">No expenses added.</p>
+                                )}
+                                <div className="space-y-2">
+                                    {editState.expenses?.map((expense, index) => (
+                                        <div key={index} className="flex gap-2 items-start">
+                                            <Input
+                                                placeholder="Expense description"
+                                                value={expense.description}
+                                                onChange={(e) => handleExpenseChange(index, 'description', e.target.value)}
+                                                className="flex-1 h-9 text-sm"
+                                            />
+                                            <div className="relative w-24 shrink-0">
+                                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">£</span>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    value={expense.amount || ''}
+                                                    onChange={(e) => handleExpenseChange(index, 'amount', parseFloat(e.target.value))}
+                                                    className="pl-6 h-9 text-sm"
+                                                />
+                                            </div>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeExpense(index)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
+                                                <XCircle className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <Separator />
+
                             {editState.pickup && editState.dropoff && (
                                 <ProfitCalculator
                                     job={{ ...editState, parsedPrice: editState.fare || 0 } as MyJob}

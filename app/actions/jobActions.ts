@@ -330,7 +330,8 @@ export async function getJobCounts() {
             scheduled: 0,
             completed: 0,
             cancelled: 0,
-            archived: 0
+            archived: 0,
+            no_show: 0
         };
     }
 }

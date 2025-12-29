@@ -17,6 +17,7 @@ import {
     XCircle,
     AlertCircle,
     Undo2,
+    Receipt,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -425,6 +426,32 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
         }
     };
 
+    const handleRestore = async () => {
+        if (!job._id) return;
+        try {
+            const result = await updateJob(job._id, { status: 'scheduled' });
+            if (result.success) {
+                toast({
+                    title: "Job Restored",
+                    description: "Job has been moved to Scheduled list.",
+                });
+                router.refresh();
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: result.error || "Failed to restore job.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "An unexpected error occurred.",
+            });
+        }
+    };
+
     return (
         <>
             <Card
@@ -488,75 +515,248 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-56">
-                                        <JobEditSheet job={job as any} onSave={handleSaveJob}>
-                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                <span>Edit</span>
-                                            </DropdownMenuItem>
-                                        </JobEditSheet>
 
-                                        <PaymentStatusDialog job={job as any} onSave={handlePaymentStatusSave}>
-                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                <CreditCard className="mr-2 h-4 w-4" />
-                                                <span>Change Payment Status</span>
-                                            </DropdownMenuItem>
-                                        </PaymentStatusDialog>
+                                        {/* Scheduled Jobs Actions */}
+                                        {displayStatus === 'scheduled' && !localJob.noShowAt && (
+                                            <>
+                                                <JobEditSheet job={job as any} onSave={handleSaveJob}>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        <span>Edit</span>
+                                                    </DropdownMenuItem>
+                                                </JobEditSheet>
 
-                                        <DropdownMenuSeparator />
+                                                <PaymentStatusDialog job={job as any} onSave={handlePaymentStatusSave}>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <CreditCard className="mr-2 h-4 w-4" />
+                                                        <span>Change Payment Status</span>
+                                                    </DropdownMenuItem>
+                                                </PaymentStatusDialog>
 
-                                        <DropdownMenuItem onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleStatusChange('completed');
-                                        }}>
-                                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                            <span>Mark as Completed</span>
-                                        </DropdownMenuItem>
+                                                <JobEditSheet job={job as any} onSave={handleSaveJob} initialTab="finance">
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <Receipt className="mr-2 h-4 w-4" />
+                                                        <span>Add Reimbursable Expense</span>
+                                                    </DropdownMenuItem>
+                                                </JobEditSheet>
 
-                                        <DropdownMenuItem onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleStatusChange('cancelled');
-                                        }}>
-                                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                                            <span>Mark as Cancelled</span>
-                                        </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
 
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleStatusChange('completed');
+                                                }}>
+                                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                                    <span>Mark as Completed</span>
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleStatusChange('cancelled');
+                                                }}>
+                                                    <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                                    <span>Mark as Cancelled</span>
+                                                </DropdownMenuItem>
+
+                                                {canMarkNoShow() && (
+                                                    <DropdownMenuItem onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setNoShowDialogOpen(true);
+                                                    }}>
+                                                        <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
+                                                        <span>Mark as No Show</span>
+                                                        <span className="ml-auto text-[10px] bg-orange-100 text-orange-600 px-1 rounded">Action Required</span>
+                                                    </DropdownMenuItem>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* Completed Jobs Actions */}
+                                        {displayStatus === 'completed' && (
+                                            <>
+                                                <JobEditSheet job={job as any} onSave={handleSaveJob}>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        <span>Edit</span>
+                                                    </DropdownMenuItem>
+                                                </JobEditSheet>
+
+                                                <PaymentStatusDialog job={job as any} onSave={handlePaymentStatusSave}>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <CreditCard className="mr-2 h-4 w-4" />
+                                                        <span>Change Payment Status</span>
+                                                    </DropdownMenuItem>
+                                                </PaymentStatusDialog>
+
+                                                <JobEditSheet job={job as any} onSave={handleSaveJob} initialTab="finance">
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <Receipt className="mr-2 h-4 w-4" />
+                                                        <span>Add Reimbursable Expense</span>
+                                                    </DropdownMenuItem>
+                                                </JobEditSheet>
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleStatusChange('scheduled');
+                                                }}>
+                                                    <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                                                    <span>Mark as Scheduled</span>
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleStatusChange('cancelled');
+                                                }}>
+                                                    <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                                    <span>Mark as Cancelled</span>
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setArchiveDialogOpen(true);
+                                                }}>
+                                                    <Archive className="mr-2 h-4 w-4" />
+                                                    <span>Move to Archive</span>
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteDialogOpen(true);
+                                                }} className="text-red-600 focus:text-red-600">
+                                                    <Trash className="mr-2 h-4 w-4" />
+                                                    <span>Delete</span>
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+
+                                        {/* No Show Jobs Actions */}
                                         {localJob.noShowAt && (
-                                            <DropdownMenuItem onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRevertNoShow();
-                                            }}>
-                                                <Undo2 className="mr-2 h-4 w-4" />
-                                                <span>Revert to Cancelled</span>
-                                            </DropdownMenuItem>
+                                            <>
+                                                <PaymentStatusDialog job={job as any} onSave={handlePaymentStatusSave}>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <CreditCard className="mr-2 h-4 w-4" />
+                                                        <span>Change Payment Status</span>
+                                                    </DropdownMenuItem>
+                                                </PaymentStatusDialog>
+
+                                                <JobEditSheet job={job as any} onSave={handleSaveJob} initialTab="finance">
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <Receipt className="mr-2 h-4 w-4" />
+                                                        <span>Add Reimbursable Expense</span>
+                                                    </DropdownMenuItem>
+                                                </JobEditSheet>
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRevertNoShow();
+                                                }}>
+                                                    <Undo2 className="mr-2 h-4 w-4" />
+                                                    <span>Revert to Cancelled</span>
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setArchiveDialogOpen(true);
+                                                }}>
+                                                    <Archive className="mr-2 h-4 w-4" />
+                                                    <span>Move to Archive</span>
+                                                </DropdownMenuItem>
+                                            </>
                                         )}
 
-                                        {canMarkNoShow() && (
-                                            <DropdownMenuItem onClick={(e) => {
-                                                e.stopPropagation();
-                                                setNoShowDialogOpen(true);
-                                            }}>
-                                                <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
-                                                <span>Mark as No Show</span>
-                                                <span className="ml-auto text-[10px] bg-orange-100 text-orange-600 px-1 rounded">Action Required</span>
-                                            </DropdownMenuItem>
+                                        {/* Cancelled Jobs Actions */}
+                                        {displayStatus === 'cancelled' && !localJob.noShowAt && (
+                                            <>
+                                                <JobEditSheet job={job as any} onSave={handleSaveJob}>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        <span>Edit</span>
+                                                    </DropdownMenuItem>
+                                                </JobEditSheet>
+
+                                                <PaymentStatusDialog job={job as any} onSave={handlePaymentStatusSave}>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <CreditCard className="mr-2 h-4 w-4" />
+                                                        <span>Change Payment Status</span>
+                                                    </DropdownMenuItem>
+                                                </PaymentStatusDialog>
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleStatusChange('scheduled');
+                                                }}>
+                                                    <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                                                    <span>Mark as Scheduled</span>
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleStatusChange('completed');
+                                                }}>
+                                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                                    <span>Mark as Completed</span>
+                                                </DropdownMenuItem>
+
+                                                {canMarkNoShow() && (
+                                                    <DropdownMenuItem onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setNoShowDialogOpen(true);
+                                                    }}>
+                                                        <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
+                                                        <span>Mark as No Show</span>
+                                                        <span className="ml-auto text-[10px] bg-orange-100 text-orange-600 px-1 rounded">Action Required</span>
+                                                    </DropdownMenuItem>
+                                                )}
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setArchiveDialogOpen(true);
+                                                }}>
+                                                    <Archive className="mr-2 h-4 w-4" />
+                                                    <span>Move to Archive</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteDialogOpen(true);
+                                                }} className="text-red-600 focus:text-red-600">
+                                                    <Trash className="mr-2 h-4 w-4" />
+                                                    <span>Delete</span>
+                                                </DropdownMenuItem>
+                                            </>
                                         )}
 
-                                        <DropdownMenuSeparator />
+                                        {/* Archived Jobs Actions */}
+                                        {displayStatus === 'archived' && (
+                                            <>
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRestore();
+                                                }}>
+                                                    <Undo2 className="mr-2 h-4 w-4" />
+                                                    <span>Restore Job</span>
+                                                </DropdownMenuItem>
 
-                                        <DropdownMenuItem onClick={(e) => {
-                                            e.stopPropagation();
-                                            setArchiveDialogOpen(true);
-                                        }}>
-                                            <Archive className="mr-2 h-4 w-4" />
-                                            <span>Move to Archive</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDeleteDialogOpen(true);
-                                        }} className="text-red-600 focus:text-red-600">
-                                            <Trash className="mr-2 h-4 w-4" />
-                                            <span>Delete</span>
-                                        </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteDialogOpen(true);
+                                                }} className="text-red-600">
+                                                    <Trash className="mr-2 h-4 w-4" />
+                                                    <span>Delete</span>
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getTripInfo } from '@/ai/flows/get-trip-info';
 import { checkJobOverlap } from '@/app/actions/jobActions';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { AlertTriangle, Map, Clock, User, Car, Calendar, Phone, Plane, MessageSquare, BaggageClaim, Baby, CircleDot, Flag, Square, Users, Banknote, Copy } from 'lucide-react';
+import { AlertTriangle, Map, Clock, User, Car, Calendar, Phone, Plane, MessageSquare, BaggageClaim, Baby, CircleDot, Flag, Square, Users, Banknote, Copy, Download, Receipt } from 'lucide-react';
 import type { MyJob, ProcessedJob } from '@/types';
 import { ProfitCalculator } from './profit-calculator';
 import { RouteDisplay } from './RouteDisplay';
@@ -365,6 +365,29 @@ export function JobDetailsSheet({ job, open, onOpenChange }: JobDetailsSheetProp
                                         <InfoLine icon={Calendar} label="Payment Due" value={paymentDueDate ? format(new Date(paymentDueDate), "E, dd MMM yyyy") : null} />
                                     </div>
                                 </Card>
+
+                                {job.expenses && job.expenses.length > 0 && (
+                                    <Card className="p-4 rounded-lg bg-muted/30 border">
+                                        <h4 className="flex items-center gap-2 mb-3 text-sm font-semibold text-muted-foreground">
+                                            <Receipt className="h-4 w-4" /> Reimbursable Expenses
+                                        </h4>
+                                        <div className="space-y-3">
+                                            {(job.expenses as any[])?.map((expense, i) => (
+                                                <div key={i} className="flex justify-between items-center text-sm">
+                                                    <span className="text-foreground">{expense.description || 'Expense'}</span>
+                                                    <span className="font-medium font-mono">£{Number(expense.amount).toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                            <Separator />
+                                            <div className="flex justify-between items-center text-sm font-bold">
+                                                <span>Total Expenses</span>
+                                                <span className="text-orange-600 dark:text-orange-400">
+                                                    £{job.expenses.reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                )}
 
                                 {isLoading ? (
                                     <div className="h-20 w-full bg-muted animate-pulse rounded" />
