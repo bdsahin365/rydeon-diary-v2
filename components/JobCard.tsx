@@ -299,30 +299,16 @@ export function JobCard({ job, onEdit, onDelete, onArchive, highlightStatus }: J
                 noShowAt: null,
                 noShowWaitTime: null,
                 status: 'cancelled', // Revert to standard cancelled
-                expenses: [] // Clear no-show expenses
+                expenses: [], // Clear no-show expenses
+                profit: null // Reset profit for cancelled status
             };
 
-            // Restore original fare if available
             // Restore original fare if available
             if (localJob.originalFare !== undefined && localJob.originalFare !== null) {
                 const restoredFare = localJob.originalFare;
                 updatePayload.fare = restoredFare;
                 updatePayload.price = `£${restoredFare.toFixed(2)}`;
                 updatePayload.originalFare = null; // Clear the stored original
-
-                // Recalculate Profit based on Restored Fare
-                // Using standard defaults identical to NoShowDialog for consistency
-                const distanceNum = parseFloat((localJob.distance || '0').replace(/[^\d.]/g, '')) || 0;
-                const fuelCost = (distanceNum / 45) * (1.45 * 4.546); // ~45mpg, 1.45/L
-                const maintCost = distanceNum * 0.08; // 8p/mile
-                const opFee = restoredFare * ((localJob.operatorFee || 0) / 100);
-                const airport = localJob.includeAirportFee ? (localJob.airportFee || 0) : 0;
-                // No expenses as we just cleared them
-
-                const totalCosts = fuelCost + maintCost + opFee + airport;
-                const newProfit = restoredFare - totalCosts;
-
-                updatePayload.profit = newProfit;
             }
 
             // Optimistic Update
