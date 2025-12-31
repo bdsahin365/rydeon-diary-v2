@@ -576,6 +576,31 @@ export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheet
                                 </div>
                             </div>
 
+                            <div className="space-y-1 pt-2">
+                                <Label>Payment Status</Label>
+                                <ResponsiveSelect
+                                    value={(editState as MyJob).paymentStatus || 'unpaid'}
+                                    onValueChange={(value) => handleValueChange('paymentStatus', value)}
+                                    options={[
+                                        { value: 'unpaid', label: 'Unpaid' },
+                                        { value: 'paid', label: 'Paid' },
+                                        { value: 'payment-scheduled', label: 'Payment Scheduled' },
+                                        { value: 'overdue', label: 'Overdue' },
+                                    ]}
+                                    label="Payment Status"
+                                />
+                            </div>
+                            {(editState as MyJob).paymentStatus === 'payment-scheduled' && (
+                                <div className="space-y-1">
+                                    <Label>Payment Due Date</Label>
+                                    <ResponsiveDatePicker
+                                        date={(editState as MyJob).paymentDueDate ? new Date((editState as MyJob).paymentDueDate!) : undefined}
+                                        setDate={(date) => handleValueChange('paymentDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                                        placeholder="Set Date"
+                                    />
+                                </div>
+                            )}
+
                             <Separator />
 
                             <div className="space-y-4 rounded-lg border p-4 bg-muted/20">
@@ -634,30 +659,7 @@ export function JobEditSheet({ job, children, onSave, initialTab }: JobEditSheet
                                 <Label>Passenger Phone Number</Label>
                                 <Input type="tel" value={editState.customerPhone || ''} onChange={(e) => handleValueChange('customerPhone', e.target.value)} />
                             </div>
-                            <div className="space-y-1">
-                                <Label>Payment Status</Label>
-                                <ResponsiveSelect
-                                    value={(editState as MyJob).paymentStatus || 'unpaid'}
-                                    onValueChange={(value) => handleValueChange('paymentStatus', value)}
-                                    options={[
-                                        { value: 'unpaid', label: 'Unpaid' },
-                                        { value: 'paid', label: 'Paid' },
-                                        { value: 'payment-scheduled', label: 'Payment Scheduled' },
-                                        { value: 'overdue', label: 'Overdue' },
-                                    ]}
-                                    label="Payment Status"
-                                />
-                            </div>
-                            {(editState as MyJob).paymentStatus === 'payment-scheduled' && (
-                                <div className="space-y-1">
-                                    <Label>Payment Due Date</Label>
-                                    <ResponsiveDatePicker
-                                        date={(editState as MyJob).paymentDueDate ? new Date((editState as MyJob).paymentDueDate!) : undefined}
-                                        setDate={(date) => handleValueChange('paymentDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
-                                        placeholder="Set Date"
-                                    />
-                                </div>
-                            )}
+
                             <div className="space-y-1">
                                 <Label>Additional note</Label>
                                 <Textarea value={editState.notes || ''} onChange={(e) => handleValueChange('notes', e.target.value)} />
